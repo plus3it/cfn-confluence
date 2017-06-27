@@ -1,9 +1,9 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "This template sets up the IAM role needed by an Artifactory instance",
+  "Description": "This template sets up the IAM role needed by an Confluence instance",
   "Parameters": {
     "BackupBucketArn": {
-      "Description": "S3 Bucket to host Artifactory backups",
+      "Description": "S3 Bucket to host Confluence backups",
       "Type": "String"
     }
   },
