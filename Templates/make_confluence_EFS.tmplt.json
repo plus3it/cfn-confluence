@@ -1,0 +1,76 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "This template sets up the EFS filesystems used by Confluence for persistent storage",
+  "Outputs": {
+    "EfsId": {
+      "Value": { "Ref": "ConfluenceEFS" },
+      "Description": "Confluence EFS filesystem-ID."
+    },
+    "EfsMntId1": {
+      "Value": { "Ref": "ConfluenceEFSMount1" },
+      "Description": "Confluence EFS mount-target ID."
+    },
+    "EfsMntId2": {
+      "Value": { "Ref": "ConfluenceEFSMount2" },
+      "Description": "Confluence EFS mount-target ID."
+    },
+    "EfsMntId3": {
+      "Value": { "Ref": "ConfluenceEFSMount3" },
+      "Description": "Confluence EFS mount-target ID."
+    }
+  },
+  "Parameters": {
+    "EfsSg": {
+      "Description": "List of security groups to apply to the EFS shares.",
+      "Type": "List<AWS::EC2::SecurityGroup::Id>"
+    },
+    "EfsSubnet": {
+      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Description": "Select three subnets - each from different Availability Zones."
+    }
+  },
+  "Resources": {
+    "ConfluenceEFS" : {
+      "Type" : "AWS::EFS::FileSystem",
+      "Properties" : {
+        "FileSystemTags" : [
+          {
+            "Key" : "Name",
+            "Value" : {
+              "Fn::Join" : [
+                "", [
+                  { "Ref": "AWS::StackName" },
+                  "-Confluence_EFS"
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "ConfluenceEFSMount1" : {
+      "Type" : "AWS::EFS::MountTarget",
+      "Properties" : {
+        "FileSystemId": { "Ref": "ConfluenceEFS" },
+        "SecurityGroups": { "Ref": "EfsSg" },
+        "SubnetId": { "Fn::Select": [ "0", { "Ref": "EfsSubnet" } ] }
+      }
+    },
+    "ConfluenceEFSMount2" : {
+      "Type" : "AWS::EFS::MountTarget",
+      "Properties" : {
+        "FileSystemId": { "Ref": "ConfluenceEFS" },
+        "SecurityGroups": { "Ref": "EfsSg" },
+        "SubnetId": { "Fn::Select": [ "1", { "Ref": "EfsSubnet" } ] }
+      }
+    },
+    "ConfluenceEFSMount3" : {
+      "Type" : "AWS::EFS::MountTarget",
+      "Properties" : {
+        "FileSystemId": { "Ref": "ConfluenceEFS" },
+        "SecurityGroups": { "Ref": "EfsSg" },
+        "SubnetId": { "Fn::Select": [ "2", { "Ref": "EfsSubnet" } ] }
+      }
+    }
+  }
+}
