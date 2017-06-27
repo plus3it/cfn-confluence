@@ -1,0 +1,22 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "This template sets up the Buckets used by Confluence for S3-based storage",
+  "Resources": {
+    "Backups": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccessControl": "BucketOwnerFullControl"
+      }
+    }
+  },
+  "Outputs": {
+    "BackupBucket": {
+      "Value": { "Ref": "Backups" },
+      "Description": "Confluence S3 backup bucket name."
+    },
+    "BucketArn": {
+      "Value": { "Fn::GetAtt": [ "Backups", "Arn" ] },
+      "Description": "ARN of the Confluence S3 backup bucket."
+    }
+  }
+}
