@@ -99,7 +99,7 @@ echo "Getting firewalld info for Confluence"
   firewall-cmd --permanent --service=confluence --get-short
   firewall-cmd --permanent --service=confluence --get-description
   firewall-cmd --info-service=confluence
-  firewall-cmd --add-service=confluence
+  firewall-cmd --permanent --add-service=confluence
   iptables -n -L IN_public_allow
 ) | sed 's /^/  '
 
