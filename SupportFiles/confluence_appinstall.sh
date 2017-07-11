@@ -50,7 +50,7 @@ function MtPersistDir {
    local DSTDIR="$(echo ${SRCDIR} | sed -e 's#_#/#' -e 's#^#/#')"
 
    # Verify source exists (fix as necessary)
-   if [[ ! -d /mnt:/${SRCDIR} ]]
+   if [[ ! -d /mnt/${SRCDIR} ]]
    then
       err_exit "Aborting: ${SRCDIR} does not exist."
    fi
