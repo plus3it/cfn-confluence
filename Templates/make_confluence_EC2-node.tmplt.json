@@ -92,7 +92,7 @@
       ]
     }
   },
-  "Description": "This template deploys a Linux instance using Watchmaker, which applies the DISA STIG.",
+  "Description": "This template deploys a Linux instance to host Atlassian's Confluence application.",
   "Mappings": {
     "Distro2RootDevice": {
       "AmazonLinux": {
