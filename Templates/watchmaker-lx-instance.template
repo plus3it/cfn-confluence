@@ -49,18 +49,6 @@
         }
       ]
     },
-    "ExecuteAppScript": {
-      "Fn::Not": [
-        {
-          "Fn::Equals": [
-            {
-              "Ref": "AppScriptUrl"
-            },
-            ""
-          ]
-        }
-      ]
-    },
     "InstallUpdates": {
       "Fn::Not": [
         {
@@ -85,30 +73,6 @@
         }
       ]
     },
-    "UseAdminGroups": {
-      "Fn::Not": [
-        {
-          "Fn::Equals": [
-            {
-              "Ref": "WatchmakerAdminGroups"
-            },
-            ""
-          ]
-        }
-      ]
-    },
-    "UseAdminUsers": {
-      "Fn::Not": [
-        {
-          "Fn::Equals": [
-            {
-              "Ref": "WatchmakerAdminUsers"
-            },
-            ""
-          ]
-        }
-      ]
-    },
     "UseCfnUrl": {
       "Fn::Not": [
         {
@@ -121,36 +85,12 @@
         }
       ]
     },
-    "UseComputerName": {
-      "Fn::Not": [
-        {
-          "Fn::Equals": [
-            {
-              "Ref": "WatchmakerComputerName"
-            },
-            ""
-          ]
-        }
-      ]
-    },
     "UseEnvironment": {
       "Fn::Not": [
         {
           "Fn::Equals": [
             {
               "Ref": "WatchmakerEnvironment"
-            },
-            ""
-          ]
-        }
-      ]
-    },
-    "UseOuPath": {
-      "Fn::Not": [
-        {
-          "Fn::Equals": [
-            {
-              "Ref": "WatchmakerOuPath"
             },
             ""
           ]
@@ -200,36 +140,14 @@
             "NoPublicIp",
             "NoReboot",
             "NoUpdates",
+            "Hostname",
+            "Domainname",
             "SecurityGroupIds"
           ]
         },
         {
           "Label": {
-            "default": "EC2 Watchmaker Configuration"
-          },
-          "Parameters": [
-            "PypiIndexUrl",
-            "WatchmakerConfig",
-            "WatchmakerEnvironment",
-            "WatchmakerOuPath",
-            "WatchmakerComputerName",
-            "WatchmakerAdminGroups",
-            "WatchmakerAdminUsers"
-          ]
-        },
-        {
-          "Label": {
-            "default": "EC2 Application Configuration"
-          },
-          "Parameters": [
-            "AppScriptUrl",
-            "AppScriptParams",
-            "AppScriptShell"
-          ]
-        },
-        {
-          "Label": {
-            "default": "EC2 Application EBS Volume"
+            "default": "Confluence EBS Volume (Optional)"
           },
           "Parameters": [
             "AppVolumeDevice",
@@ -240,72 +158,51 @@
         },
         {
           "Label": {
-            "default": "Network Configuration"
+            "default": "Confluence Params"
           },
           "Parameters": [
-            "PrivateIp",
-            "SubnetId"
+            "ConfluenceOsPrepUrl",
+            "ConfluenceInstallBinUrl",
+            "ConfluenceInstallerScriptUrl",
+            "ConfluenceSharePath",
+            "ConfluenceShareType"
           ]
         },
         {
           "Label": {
-            "default": "CloudFormation Configuration"
+            "default": "Database Connection Params"
           },
           "Parameters": [
-            "CfnEndpointUrl",
-            "CfnGetPipUrl",
-            "CfnBootstrapUtilsUrl",
-            "ToggleCfnInitUpdate"
+            "DbFqdn",
+            "DbAdminName",
+            "DbAdminPass",
+            "DbInstanceName"
           ]
         }
-      ],
-      "ParameterLabels": {
-        "ToggleCfnInitUpdate": {
-          "default": "Force Cfn Init Update"
-        }
-      }
+      ]
     }
   },
   "Outputs": {
-    "WatchmakerInstanceId": {
+    "ConfluenceInstanceId": {
       "Description": "Instance ID",
       "Value": {
-        "Ref": "WatchmakerInstance"
+        "Ref": "ConfluenceEC2"
       }
     }
   },
   "Parameters": {
     "AmiDistro": {
       "AllowedValues": [
-        "AmazonLinux",
         "CentOS",
         "RedHat"
       ],
+      "Default": "CentOS",
       "Description": "Linux distro of the AMI",
       "Type": "String"
     },
     "AmiId": {
       "AllowedPattern": "^ami-[0-9a-z]{8}$|^ami-[0-9a-z]{17}$",
       "Description": "ID of the AMI to launch",
-      "Type": "String"
-    },
-    "AppScriptParams": {
-      "Description": "Parameter string to pass to the application script. Ignored if \"AppScriptUrl\" is blank",
-      "Type": "String"
-    },
-    "AppScriptShell": {
-      "AllowedValues": [
-        "bash",
-        "python"
-      ],
-      "Default": "bash",
-      "Description": "Shell with which to execute the application script. Ignored if \"AppScriptUrl\" is blank",
-      "Type": "String"
-    },
-    "AppScriptUrl": {
-      "AllowedPattern": "^$|^http[s]?://.*$",
-      "Default": "",
-      "Description": "(Optional) URL to the application script. Leave blank to launch without an application script",
       "Type": "String"
     },
     "AppVolumeDevice": {
@@ -347,22 +244,71 @@
       "Description": "Type of EBS volume to create. Ignored if \"AppVolumeDevice\" is blank",
       "Type": "String"
     },
-    "CfnBootstrapUtilsUrl": {
-      "AllowedPattern": "^http[s]?://.*\\.tar\\.gz$",
-      "Default": "https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz",
-      "Description": "URL to aws-cfn-bootstrap-latest.tar.gz",
-      "Type": "String"
-    },
     "CfnEndpointUrl": {
       "AllowedPattern": "^$|^http[s]?://.*$",
       "Default": "https://cloudformation.us-east-1.amazonaws.com",
       "Description": "(Optional) URL to the CloudFormation Endpoint. e.g. https://cloudformation.us-east-1.amazonaws.com",
       "Type": "String"
     },
-    "CfnGetPipUrl": {
-      "AllowedPattern": "^http[s]?://.*\\.py$",
-      "Default": "https://bootstrap.pypa.io/get-pip.py",
-      "Description": "URL to get-pip.py",
+    "ConfluenceInstallBinUrl": {
+      "AllowedPattern": "^$|^http://.*$|^https://.*$",
+      "Description": "URL to Confluence installer-bin.",
+      "Type": "String"
+    },
+    "ConfluenceInstallerScriptUrl": {
+      "AllowedPattern": "^$|^http://.*$|^https://.*$",
+      "Description": "URL to script that installs Confluence to the EC2 instance.",
+      "Type": "String"
+    },
+    "ConfluenceOsPrepUrl": {
+      "AllowedPattern": "^$|^http://.*$|^https://.*$",
+      "Description": "URL to script that prepares the EC2 instance for a Confluence install.",
+      "Type": "String"
+    },
+    "ConfluenceSharePath": {
+      "Default": "",
+      "Description": "Share-path of shared Confluence content.",
+      "Type": "String"
+    },
+    "ConfluenceShareType": {
+      "AllowedValues": [
+        "glusterfs",
+        "nfs"
+      ],
+      "Description": "Type of network share hosting shared Confluence content.",
+      "Type": "String"
+    },
+    "DbAdminName": {
+      "Description": "Name of the Confluence master database-user.",
+      "Type": "String"
+    },
+    "DbAdminPass": {
+      "Description": "Password of the Confluence master database-user.",
+      "Type": "String"
+    },
+    "DbFqdn": {
+      "Description": "Fully-qualified domainname of the Confluence database host.",
+      "Type": "String"
+    },
+    "DbInstanceName": {
+      "Description": "Instance-name of the Confluence database.",
+      "Type": "String"
+    },
+    "Domainname": {
+      "ConstraintDescription": "An alphanumeric string to complete the domain portion of the instance's FQDN.",
+      "Description": "Suffix for Confluence's hostname and DNS record",
+      "Type": "String"
+    },
+    "EpelRepo": {
+      "AllowedPattern": "^[a-z][a-z0-9-]*$",
+      "ConstraintDescription": "An alphanumeric string that represents the EPEL yum repo's label.",
+      "Default": "epel",
+      "Description": "Name of network's EPEL repo.",
+      "Type": "String"
+    },
+    "Hostname": {
+      "ConstraintDescription": "An alphanumeric string to complete the hostname portion of the instance's FQDN.",
+      "Description": "Node-name for Confluence's hostname and DNS record",
       "Type": "String"
     },
     "InstanceRole": {
@@ -416,15 +362,32 @@
       "Description": "Controls whether to run yum update during a stack update (on the initial instance launch, Watchmaker _always_ installs updates)",
       "Type": "String"
     },
+    "PipRpm": {
+      "Default": "python2-pip",
+      "Description": "Name of preferred pip RPM.",
+      "Type": "String"
+    },
     "PrivateIp": {
       "Default": "",
       "Description": "(Optional) Set a static, primary private IP. Leave blank to auto-select a free IP",
+      "Type": "String"
+    },
+    "ProvisionUser": {
+      "AllowedPattern": "[a-z0-9]{6,12}+",
+      "ConstraintDescription": "Alphanumeric string between 6 and 12 characters.",
+      "Default": "confbuilder",
+      "Description": "Default login user account name.",
       "Type": "String"
     },
     "PypiIndexUrl": {
       "AllowedPattern": "^http[s]?://.*$",
       "Default": "https://pypi.org/simple",
       "Description": "URL to the PyPi Index",
+      "Type": "String"
+    },
+    "PyStache": {
+      "Default": "pystache",
+      "Description": "Name of preferred pystache RPM.",
       "Type": "String"
     },
     "SecurityGroupIds": {
@@ -434,30 +397,6 @@
     "SubnetId": {
       "Description": "ID of the subnet to assign to the instance",
       "Type": "AWS::EC2::Subnet::Id"
-    },
-    "ToggleCfnInitUpdate": {
-      "AllowedValues": [
-        "A",
-        "B"
-      ],
-      "Default": "A",
-      "Description": "A/B toggle that forces a change to instance metadata, triggering the cfn-init update sequence",
-      "Type": "String"
-    },
-    "WatchmakerAdminGroups": {
-      "Default": "",
-      "Description": "(Optional) Colon-separated list of domain groups that should have admin permissions on the EC2 instance",
-      "Type": "String"
-    },
-    "WatchmakerAdminUsers": {
-      "Default": "",
-      "Description": "(Optional) Colon-separated list of domain users that should have admin permissions on the EC2 instance",
-      "Type": "String"
-    },
-    "WatchmakerComputerName": {
-      "Default": "",
-      "Description": "(Optional) Sets the hostname/computername within the OS",
-      "Type": "String"
     },
     "WatchmakerConfig": {
       "AllowedPattern": "^$|^http[s]?://.*$",
@@ -475,16 +414,10 @@
       "Default": "",
       "Description": "Environment in which the instance is being deployed",
       "Type": "String"
-    },
-    "WatchmakerOuPath": {
-      "AllowedPattern": "^$|^(OU=.+,)+(DC=.+)+$",
-      "Default": "",
-      "Description": "(Optional) DN of the OU to place the instance when joining a domain. If blank and \"WatchmakerEnvironment\" enforces a domain join, the instance will be placed in a default container. Leave blank if not joining a domain, or if \"WatchmakerEnvironment\" is \"false\"",
-      "Type": "String"
     }
   },
   "Resources": {
-    "WatchmakerInstance": {
+    "ConfluenceEC2": {
       "CreationPolicy": {
         "ResourceSignal": {
           "Count": "1",
@@ -494,19 +427,25 @@
       "Metadata": {
         "AWS::CloudFormation::Init": {
           "configSets": {
-            "launch": [
+            "default": [
               "setup",
               "watchmaker-install",
               "watchmaker-launch",
+              "finalize",
               {
                 "Fn::If": [
-                  "ExecuteAppScript",
-                  "make-app",
+                  "Reboot",
+                  "reboot",
                   {
                     "Ref": "AWS::NoValue"
                   }
                 ]
-              },
+              }
+            ],
+            "launch": [
+              "setup",
+              "watchmaker-install",
+              "watchmaker-launch",
               "finalize",
               {
                 "Fn::If": [
@@ -531,15 +470,6 @@
               },
               "watchmaker-install",
               "watchmaker-update",
-              {
-                "Fn::If": [
-                  "ExecuteAppScript",
-                  "make-app",
-                  {
-                    "Ref": "AWS::NoValue"
-                  }
-                ]
-              },
               "finalize",
               {
                 "Fn::If": [
@@ -564,7 +494,7 @@
                       {
                         "Ref": "AWS::StackName"
                       },
-                      " --resource WatchmakerInstance",
+                      " --resource ConfluenceEC2",
                       {
                         "Fn::If": [
                           "AssignInstanceRole",
@@ -615,36 +545,6 @@
             "commands": {
               "10-install-updates": {
                 "command": "yum -y update"
-              }
-            }
-          },
-          "make-app": {
-            "commands": {
-              "10-make-app": {
-                "command": {
-                  "Fn::Join": [
-                    "",
-                    [
-                      {
-                        "Ref": "AppScriptShell"
-                      },
-                      " /etc/cfn/scripts/make-app ",
-                      {
-                        "Ref": "AppScriptParams"
-                      }
-                    ]
-                  ]
-                }
-              }
-            },
-            "files": {
-              "/etc/cfn/scripts/make-app": {
-                "group": "root",
-                "mode": "000700",
-                "owner": "root",
-                "source": {
-                  "Ref": "AppScriptUrl"
-                }
               }
             }
           },
@@ -727,13 +627,13 @@
                     [
                       "[cfn-auto-reloader-hook]\n",
                       "triggers=post.update\n",
-                      "path=Resources.WatchmakerInstance.Metadata\n",
+                      "path=Resources.ConfluenceEC2.Metadata\n",
                       "action=/opt/aws/bin/cfn-init -v -c update",
                       " --stack ",
                       {
                         "Ref": "AWS::StackName"
                       },
-                      " --resource WatchmakerInstance",
+                      " --resource ConfluenceEC2",
                       {
                         "Fn::If": [
                           "AssignInstanceRole",
@@ -871,78 +771,6 @@
                           },
                           ""
                         ]
-                      },
-                      {
-                        "Fn::If": [
-                          "UseOuPath",
-                          {
-                            "Fn::Join": [
-                              "",
-                              [
-                                " --ou-path \"",
-                                {
-                                  "Ref": "WatchmakerOuPath"
-                                },
-                                "\""
-                              ]
-                            ]
-                          },
-                          ""
-                        ]
-                      },
-                      {
-                        "Fn::If": [
-                          "UseComputerName",
-                          {
-                            "Fn::Join": [
-                              "",
-                              [
-                                " --computer-name \"",
-                                {
-                                  "Ref": "WatchmakerComputerName"
-                                },
-                                "\""
-                              ]
-                            ]
-                          },
-                          ""
-                        ]
-                      },
-                      {
-                        "Fn::If": [
-                          "UseAdminGroups",
-                          {
-                            "Fn::Join": [
-                              "",
-                              [
-                                " --admin-groups \"",
-                                {
-                                  "Ref": "WatchmakerAdminGroups"
-                                },
-                                "\""
-                              ]
-                            ]
-                          },
-                          ""
-                        ]
-                      },
-                      {
-                        "Fn::If": [
-                          "UseAdminUsers",
-                          {
-                            "Fn::Join": [
-                              "",
-                              [
-                                " --admin-users \"",
-                                {
-                                  "Ref": "WatchmakerAdminUsers"
-                                },
-                                "\""
-                              ]
-                            ]
-                          },
-                          ""
-                        ]
                       }
                     ]
                   ]
@@ -996,78 +824,6 @@
                           },
                           ""
                         ]
-                      },
-                      {
-                        "Fn::If": [
-                          "UseOuPath",
-                          {
-                            "Fn::Join": [
-                              "",
-                              [
-                                " --oupath \"",
-                                {
-                                  "Ref": "WatchmakerOuPath"
-                                },
-                                "\""
-                              ]
-                            ]
-                          },
-                          ""
-                        ]
-                      },
-                      {
-                        "Fn::If": [
-                          "UseComputerName",
-                          {
-                            "Fn::Join": [
-                              "",
-                              [
-                                " --computer-name \"",
-                                {
-                                  "Ref": "WatchmakerComputerName"
-                                },
-                                "\""
-                              ]
-                            ]
-                          },
-                          ""
-                        ]
-                      },
-                      {
-                        "Fn::If": [
-                          "UseAdminGroups",
-                          {
-                            "Fn::Join": [
-                              "",
-                              [
-                                " --admin-groups \"",
-                                {
-                                  "Ref": "WatchmakerAdminGroups"
-                                },
-                                "\""
-                              ]
-                            ]
-                          },
-                          ""
-                        ]
-                      },
-                      {
-                        "Fn::If": [
-                          "UseAdminUsers",
-                          {
-                            "Fn::Join": [
-                              "",
-                              [
-                                " --admin-users \"",
-                                {
-                                  "Ref": "WatchmakerAdminUsers"
-                                },
-                                "\""
-                              ]
-                            ]
-                          },
-                          ""
-                        ]
                       }
                     ]
                   ]
@@ -1075,9 +831,6 @@
               }
             }
           }
-        },
-        "ToggleCfnInitUpdate": {
-          "Ref": "ToggleCfnInitUpdate"
         }
       },
       "Properties": {
@@ -1131,23 +884,13 @@
         "IamInstanceProfile": {
           "Fn::If": [
             "AssignInstanceRole",
-            {
-              "Ref": "InstanceRole"
-            },
-            {
-              "Ref": "AWS::NoValue"
-            }
+            { "Ref": "InstanceRole" },
+            { "Ref": "AWS::NoValue" }
           ]
         },
-        "ImageId": {
-          "Ref": "AmiId"
-        },
-        "InstanceType": {
-          "Ref": "InstanceType"
-        },
-        "KeyName": {
-          "Ref": "KeyPairName"
-        },
+        "ImageId": { "Ref": "AmiId" },
+        "InstanceType": { "Ref": "InstanceType" },
+        "KeyName": { "Ref": "KeyPairName" },
         "NetworkInterfaces": [
           {
             "AssociatePublicIpAddress": {
@@ -1197,16 +940,32 @@
             "Fn::Join": [
               "",
               [
-                "Content-Type: multipart/mixed; boundary=\"===============3585321300151562773==\"\n",
-                "MIME-Version: 1.0\n",
-                "\n",
-                "--===============3585321300151562773==\n",
-                "Content-Type: text/cloud-config; charset=\"us-ascii\"\n",
-                "MIME-Version: 1.0\n",
-                "Content-Transfer-Encoding: 7bit\n",
-                "Content-Disposition: attachment; filename=\"cloud.cfg\"\n",
-                "\n",
                 "#cloud-config\n",
+                "\n",
+                "system_info:\n",
+                "  default_user:\n",
+                "    name: ",
+                {
+                  "Ref": "ProvisionUser"
+                },
+                "\n",
+                "\n",
+                "hostname: ",
+                {
+                  "Ref": "Hostname"
+                },
+                "\n",
+                "fqdn: ",
+                {
+                  "Ref": "Hostname"
+                },
+                ".",
+                {
+                  "Ref": "Domainname"
+                },
+                "\n",
+                "manage_etc_hosts: true\n",
+                "\n",
                 {
                   "Fn::If": [
                     "CreateAppVolume",
@@ -1239,173 +998,89 @@
                   ]
                 },
                 "\n",
-                "--===============3585321300151562773==\n",
-                "Content-Type: text/x-shellscript; charset=\"us-ascii\"\n",
-                "MIME-Version: 1.0\n",
-                "Content-Transfer-Encoding: 7bit\n",
-                "Content-Disposition: attachment; filename=\"script.sh\"\n",
-                "\n",
-                "#!/bin/bash -xe\n\n",
-                "# Export cert bundle ENVs\n",
-                "export AWS_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt\n",
-                "export REQUESTS_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt\n\n",
-                "# Get pip\n",
-                "curl --silent --show-error --retry 5 -L ",
-                {
-                  "Ref": "CfnGetPipUrl"
-                },
-                " | python",
-                "\n\n",
-                "# Add pip to path\n",
-                "hash pip 2> /dev/null || ",
-                "PATH=\"${PATH}:/usr/local/bin\"",
-                "\n\n",
-                "# Upgrade pip and setuptools\n",
-                "PYPI_URL=",
-                {
-                  "Ref": "PypiIndexUrl"
-                },
-                "\n",
-                "PYPI_HOST=$(echo $PYPI_URL |sed -e \"s/[^/]*\\/\\/\\([^@]*@\\)\\?\\([^:/]*\\).*/\\2/\")\n",
-                "pip install",
-                " --index-url=\"$PYPI_URL\"",
-                " --trusted-host=\"$PYPI_HOST\"",
-                " --allow-all-external",
-                " --upgrade pip setuptools\n\n",
-                "# Fix python urllib3 warnings\n",
-                "yum -y install gcc python-devel libffi-devel openssl-devel\n",
-                "pip install",
-                " --index-url=\"$PYPI_URL\"",
-                " --trusted-host=\"$PYPI_HOST\"",
-                " --allow-all-external",
-                " --upgrade pyopenssl ndg-httpsclient pyasn1\n\n",
-                "# Get cfn utils\n",
-                "pip install",
-                " --index-url=\"$PYPI_URL\"",
-                " --trusted-host=\"$PYPI_HOST\"",
-                " --allow-all-external",
-                " --upgrade ",
-                {
-                  "Ref": "CfnBootstrapUtilsUrl"
-                },
-                "\n\n",
-                "# Remove gcc now that it is no longer needed\n",
-                "yum -y remove gcc --setopt=clean_requirements_on_remove=1\n\n",
-                "# Fixup cfn utils\n",
-                "INITDIR=$(find -L /opt/aws/apitools/cfn-init/init -name redhat ",
-                "2> /dev/null || echo /usr/init/redhat)\n",
-                "chmod 775 ${INITDIR}/cfn-hup\n",
-                "ln -f -s ${INITDIR}/cfn-hup /etc/rc.d/init.d/cfn-hup\n",
-                "chkconfig --add cfn-hup\n",
-                "chkconfig cfn-hup on\n",
-                "mkdir -p /opt/aws/bin\n",
-                "BINDIR=$(find -L /opt/aws/apitools/cfn-init -name bin ",
-                "2> /dev/null || echo /usr/bin)\n",
-                "for SCRIPT in cfn-elect-cmd-leader cfn-get-metadata cfn-hup ",
-                "cfn-init cfn-send-cmd-event cfn-send-cmd-result cfn-signal\n",
-                "do\n",
-                "  ln -s ${BINDIR}/${SCRIPT} /opt/aws/bin/${SCRIPT} 2> /dev/null || ",
-                "  echo Skipped symbolic link, /opt/aws/bin/${SCRIPT} already exists\n",
-                "done\n\n",
-                "# Add cfn-signal to path\n",
-                "hash cfn-signal 2> /dev/null || ",
-                "PATH=\"${PATH}:/usr/local/bin:/opt/aws/bin\"",
-                "\n\n",
-                "# Execute cfn-init\n",
-                "/opt/aws/bin/cfn-init -v -c launch",
-                " --stack ",
-                {
-                  "Ref": "AWS::StackName"
-                },
-                " --resource WatchmakerInstance",
-                {
-                  "Fn::If": [
-                    "AssignInstanceRole",
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          " --role ",
-                          {
-                            "Ref": "InstanceRole"
-                          }
-                        ]
-                      ]
-                    },
-                    ""
-                  ]
-                },
-                {
-                  "Fn::If": [
-                    "UseCfnUrl",
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          " --url ",
-                          {
-                            "Ref": "CfnEndpointUrl"
-                          }
-                        ]
-                      ]
-                    },
-                    ""
-                  ]
-                },
-                " --region ",
-                {
-                  "Ref": "AWS::Region"
-                },
-                " ||",
-                " ( echo 'ERROR: cfn-init failed! Aborting!';",
-                " /opt/aws/bin/cfn-signal -e 1",
-                "  --stack ",
-                {
-                  "Ref": "AWS::StackName"
-                },
-                "  --resource WatchmakerInstance",
-                {
-                  "Fn::If": [
-                    "AssignInstanceRole",
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          " --role ",
-                          {
-                            "Ref": "InstanceRole"
-                          }
-                        ]
-                      ]
-                    },
-                    ""
-                  ]
-                },
-                {
-                  "Fn::If": [
-                    "UseCfnUrl",
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          " --url ",
-                          {
-                            "Ref": "CfnEndpointUrl"
-                          }
-                        ]
-                      ]
-                    },
-                    ""
-                  ]
-                },
-                "  --region ",
-                {
-                  "Ref": "AWS::Region"
-                },
-                ";",
-                " exit 1",
-                " )\n\n",
-                "--===============3585321300151562773==--"
+                "runcmd:\n",
+                "  - |\n",
+                "      # Exports used by helper scripts\n",
+                "      export CONFLUENCE_SHARE_PATH=\"",
+                       { "Ref": "ConfluenceSharePath" },
+                       "\"\n",
+                "      export CONFLUENCE_SHARE_TYPE=\"",
+                       { "Ref": "ConfluenceShareType" },
+                       "\"\n",
+                "      export CONFLUENCE_OSPREP_URI=\"",
+                       { "Ref": "ConfluenceOsPrepUrl" },
+                       "\"\n",
+                "      export CONFLUENCE_INSTALLBIN_URL=\"",
+                       { "Ref": "ConfluenceInstallBinUrl" },
+                       "\"\n",
+                "      export CONFLUENCE_INSTALLSCRIPT_URL=\"",
+                       { "Ref": "ConfluenceInstallerScriptUrl" },
+                       "\"\n",
+                "      export CONFLUENCE_DB_HOST_FQDN=\"",
+                       { "Ref": "DbFqdn" },
+                       "\"\n",
+                "      export CONFLUENCE_DB_INSTANCE_NAME=\"",
+                       { "Ref": "DbInstanceName" },
+                       "\"\n",
+                "      export CONFLUENCE_DB_ADMIN_PASS=\"",
+                       { "Ref": "DbAdminPass" },
+                       "\"\n",
+                "      export CONFLUENCE_DB_ADMIN_USER=\"",
+                       { "Ref": "DbAdminName" },
+                       "\"\n",
+                "      \n",
+                "      # Export cert bundle ENVs\n",
+                "      export AWS_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt\n",
+                "      export REQUESTS_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt\n\n",
+                "      \n",
+                "      # Define our error-handler\n",
+                "      function err_exit {\n",
+                "         echo \"${1}\"\n",
+                "         logger -p kern.crit -t UserData \"${1}\"\n",
+                "         /opt/aws/bin/cfn-signal -e 1 --stack ",
+                            { "Ref": "AWS::StackName" },
+                          " --resource ConfluenceEC2\n",
+                "         exit 1\n",
+                "      }\n",
+                "      \n",
+                "      # Install RPMs needed by the cfn-tools.\n",
+                "      yum --enablerepo=",
+                       { "Ref": "EpelRepo" },
+                       " install -y ",
+                       { "Ref": "PyStache" },
+                       " ",
+                       { "Ref": "PipRpm" },
+                       " || err_exit 'Could not install Cfn dependencies.'\n",
+                "      \n",
+                "      # Initialize the Cfn subsystems\n",
+                "      /opt/aws/bin/cfn-init -s ",
+                       { "Ref": "AWS::StackName" },
+                       " -r ConfluenceEC2 ",
+                       " --region ",
+                       { "Ref": "AWS::Region" },
+                       " && echo 'Successfully ran cfn-init'",
+                       " || err_exit 'Failed to run cfn-init' > /dev/stderr\n",
+                "      \n",
+                "      # Capture CFn envs in case need to use later...\n",
+                "      echo 'Stow script ENVs for later use...'\n",
+                "      install -b -m 0400 /dev/null /etc/cfn/Confluence.envs\n",
+                "      env | grep CONFLUENCE > /etc/cfn/Confluence.envs\n",
+                "      \n",
+                "      # Fetch and run the OS-prep script\n",
+                "      printf 'Fetching OS-prep script... '\n",
+                "      curl -skL \"${CONFLUENCE_OSPREP_URI}\" -o",
+                       " /root/confluence_osprep.sh && echo 'Success.' || ",
+                       "  err_exit 'Failed fetching OS-prep script'\n",
+                "      if [[ $(head -1 /root/confluence_osprep.sh | ",
+                       " grep -q bash)$? -eq 0 ]]\n",
+                "      then\n",
+                "         echo 'Starting OS preparation'\n",
+                "         bash /root/confluence_osprep.sh ||",
+                          " err_exit 'OS-prep operation failed'\n",
+                "      else\n",
+                "         err_exit 'Fetched URL content was not a script'\n",
+                "      fi\n",
+                "      \n"
               ]
             ]
           }
