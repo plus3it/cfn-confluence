@@ -1,5 +1,5 @@
 #!/bin/bash
-# shellcheck disable=
+# shellcheck disable=SC2115,SC2155,SC2015,SC2034
 #
 #################################################################
 # shellcheck disable=SC2086
@@ -46,7 +46,8 @@ function MkPersistDir {
 ## Mount persistent content-dirs
 function MtPersistDir {
    local SRCDIR="${1}"
-   local DSTDIR="$(echo ${SRCDIR} | sed -e 's#_#/#' -e 's#^#/#')
+   # shellcheck disable=SC2155
+   local DSTDIR="$(echo ${SRCDIR} | sed -e 's#_#/#' -e 's#^#/#')"
 
    # Verify source exists (fix as necessary)
    if [[ ! -d /mnt:/${SRCDIR} ]]
@@ -66,18 +67,10 @@ function MtPersistDir {
      err_exit "Failed to mount ${MNTPNT}"
 }
 
-
-   done
-
-
-   grep "${SHARESRVR}" /proc/mounts >> /etc/fstab ||
-     err_exit 'Failed to update /etc/fstab'
-}
-
 ##
 ## Nuke the dummy data
 function CleanDummy {
-   local DUMMYDIR="$(echo ${1} | sed -e 's#_#/#' -e 's#^#/#')
+   local DUMMYDIR="$(echo ${1} | sed -e 's#_#/#' -e 's#^#/#')"
 
    printf "Attempting to clean %s... " "${DUMMYDIR}"
    rm -rf "${DUMMYDIR}"/* 2> /dev/null && \
@@ -90,11 +83,11 @@ function CleanDummy {
 ## Main script logic
 
 # Make ready for unattended install
-cat > "${RESPFILE} << EOF
-executeLauncherAction$Boolean=true
-app.install.service$Boolean=true
+cat > "${RESPFILE} << EOF"
+executeLauncherAction\$Boolean=true
+app.install.service\$Boolean=true
 sys.confirmedUpdateInstallationString=false
-launch.application$Boolean=true
+launch.application\$Boolean=true
 existingInstallationDir=/opt/Confluence
 sys.languageId=en
 sys.installationDir=/opt/atlassian/confluence

@@ -105,42 +105,6 @@ function NfsClientSetup {
    done
 }
 
-##
-## Take care of shared mounts
-function SharedMounts {
-   mount "${SHARESRVR}":/ /mnt 2> /dev/null || \
-     err_exit 'Cannot mount shared filesystems server'
-
-   for TSTMNT in var_atlassian opt_atlassian
-   do
-      MNTPNT=$(echo ${TSTMNT} | sed -e 's#_#/#' -e 's#^#/#')
-
-      # Verify source exists (fix as necessary)
-      if [[ ! -d /mnt:/"${TSTMNT}" ]]
-      then
-         install -d -m 755 /mnt:/"${TSTMNT}" ||
-           err_exit "Could not create /mnt:/${TSTMNT}"
-      fi
-
-      # Verify destination exists (fix as necessary)
-      if [[ ! -d ${MNTPNT} ]]
-      then
-         install -d -m 755 "${MNTPNT}" ||
-           err_exit "Could not create ${MNTMNT}"
-      fi
-
-      printf "Attempting to mount %s... " "${MNTPNT}"
-      mount "${SHARESRVR}":/"${TSTMNT}" "${MNTPNT}" && echo "Success" ||
-        err_exit "Failed to mount ${MNTPNT}"
-   done
-
-   umount "${SHARESRVR}":/ 2> /dev/null || \
-     err_exit 'Cannot umount shared filesystems-root'
-
-   grep "${SHARESRVR}" /proc/mounts >> /etc/fstab ||
-     err_exit 'Failed to update /etc/fstab'
-}
-
 
 ###########################
 ## Main program contents ##
