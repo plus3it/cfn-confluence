@@ -9,7 +9,14 @@
 PROGNAME="$(basename ${0})"
 SELMODE="$(awk -F= '/^SELINUX=/{print $2}' /etc/selinux/config)"
 SHARESRVR="${CONFLUENCE_SHARE_SERVER:-UNDEF}"
-BINURL="${CONFLUENCE_BIN_URL:-UNDEF}"
+SHARETYPE="${CONFLUENCE_SHARE_TYPE:-UNDEF}"
+BINURL="${CONFLUENCE_INSTALLBIN_URL:-UNDEF}"
+RPMDEPLST=(
+      postgresql
+      postgresql-jdbc
+      nfs-utils
+      nfs4-acl-tools
+   )
 
 ##
 ## Set up an error logging and exit-state
@@ -27,6 +34,54 @@ function err_exit {
       exit "${SCRIPTEXIT}"
    else
       exit 1
+   fi
+}
+
+##
+## Add RPM dependencies
+function AddonRpms {
+   local INSTRPMS=()
+
+   case "${SHARETYPE}" in
+      UNDEF)
+         err_exit 'Shareserver type not defined'
+         ;;
+      nfs)
+         RPMDEPLST+=(
+               nfs-utils
+               nfs4-acl-tools
+            )
+         ;;
+      gluster)
+         RPMDEPLST+=(
+               glusterfs
+               glusterfs-fuse
+               attr
+            )
+         ;;
+   esac
+
+   # Check if needed RPMs are missing
+   for RPM in "${RPMDEPLST[@]}"
+   do
+      printf "Checking for presence of %s... " "${RPM}"
+      if [[ $(rpm --quiet -q "$RPM")$? -eq 0 ]]
+      then
+         echo "Already installed."
+      else
+         echo "Selecting for install"
+         INSTRPMS+=("${RPM}")
+      fi
+   done
+
+   # Install any missing RPMs
+   if [[ ${#INSTRPMS[@]} -gt 0 ]]
+   then
+      echo "Will attempt to install the following RPMS: ${INSTRPMS[*]}"
+      yum install -y "${INSTRPMS[@]}" || \
+         err_exit "Install of RPM-dependencies experienced failures"
+   else
+      echo "No RPM-dependencies to satisfy"
    fi
 }
 
@@ -50,10 +105,57 @@ function NfsClientSetup {
    done
 }
 
+##
+## Take care of shared mounts
+function SharedMounts {
+   mount "${SHARESRVR}":/ /mnt 2> /dev/null || \
+     err_exit 'Cannot mount shared filesystems server'
+
+   for TSTMNT in var_atlassian opt_atlassian
+   do
+      MNTPNT=$(echo ${TSTMNT} | sed -e 's#_#/#' -e 's#^#/#')
+
+      # Verify source exists (fix as necessary)
+      if [[ ! -d /mnt:/"${TSTMNT}" ]]
+      then
+         install -d -m 755 /mnt:/"${TSTMNT}" ||
+           err_exit "Could not create /mnt:/${TSTMNT}"
+      fi
+
+      # Verify destination exists (fix as necessary)
+      if [[ ! -d ${MNTPNT} ]]
+      then
+         install -d -m 755 "${MNTPNT}" ||
+           err_exit "Could not create ${MNTMNT}"
+      fi
+
+      printf "Attempting to mount %s... " "${MNTPNT}"
+      mount "${SHARESRVR}":/"${TSTMNT}" "${MNTPNT}" && echo "Success" ||
+        err_exit "Failed to mount ${MNTPNT}"
+   done
+
+   umount "${SHARESRVR}":/ 2> /dev/null || \
+     err_exit 'Cannot umount shared filesystems-root'
+
+   grep "${SHARESRVR}" /proc/mounts >> /etc/fstab ||
+     err_exit 'Failed to update /etc/fstab'
+}
+
 
 ###########################
 ## Main program contents ##
 ###########################
+
+# Verify that critical parms were found
+if [[ ${SHARESRVR} = UNDEF ]] ||
+   [[ ${SHARETYPE} = UNDEF ]]
+   [[ ${BINURL} = UNDEF ]]
+then
+   err_exit 'A necessary parameter was not passed'
+fi
+
+# Install necessary extra RPMs
+AddonRpms
 
 ##
 ## Create firewalld service-definition for Confluence
@@ -99,29 +201,16 @@ echo "Getting firewalld info for Confluence"
   firewall-cmd --permanent --service=confluence --get-short
   firewall-cmd --permanent --service=confluence --get-description
   firewall-cmd --info-service=confluence
+  firewall-cmd --add-service=confluence
   firewall-cmd --permanent --add-service=confluence
   iptables -n -L IN_public_allow
 ) | sed 's /^/  '
 
-setenforce ${SELMODE} || err_exit "Failed setting SEL mode to ${SELMODE}"
+setenforce "${SELMODE}" || err_exit "Failed setting SEL mode to ${SELMODE}"
 
 ##
 ## Enabling services
 NfsClientSetup
-
-# Supplementary mounts...
-if [[ ! -d /var/atlassian/cluster ]]
-then
-   printf "Creating /var/atlassian/cluster... "
-   install -d -m 0700 /var/atlassian/cluster && \
-     echo "Success" || \
-     err_exit 'Failed to create /var/atlassian/cluster'
-fi
-
-printf "Mounting cluster shared directory... "
-mount "${SHARESRVR}":/atlassian/cluster /var/atlassian/cluster && \
-  echo "Success" || \
-  err_exit 'Failed to mount cluster directory'
 
 # Stage the Confluence binary-installer
 printf "Fetching Confluence binary-installer... "
@@ -129,3 +218,5 @@ curl -skL "${BINURL}" -o /root/atlassian-confluence-installer_x64.bin && \
    echo "Success" || \
    err_exit 'Failed to download the binary-installer'
 
+# Mount shared filesystems
+SharedMounts
