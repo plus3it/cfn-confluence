@@ -83,7 +83,7 @@ function CleanDummy {
 ## Main script logic
 
 # Make ready for unattended install
-cat > "${RESPFILE} << EOF"
+cat > "${RESPFILE}" << EOF
 executeLauncherAction\$Boolean=true
 app.install.service\$Boolean=true
 sys.confirmedUpdateInstallationString=false
@@ -108,10 +108,12 @@ then
       MtPersistDir "${DIR}"
    done
 
-   "${BINSTALL}" -q -varfile "${SHARESRVR}"
+   bash "${BINSTALL}" -q -varfile "${RESPFILE}" || \
+     err_exit 'Installer did not run to clean completion'
 else
    echo "This is a rebuild"
-   "${BINSTALL}" -q -varfile "${SHARESRVR}"
+   bash "${BINSTALL}" -q -varfile "${RESPFILE}" || \
+     err_exit 'Installer did not run to clean completion'
    service confluence stop
    for DIR in opt_atlassian var_atlassian
    do
