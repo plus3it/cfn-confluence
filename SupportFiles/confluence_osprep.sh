@@ -218,5 +218,7 @@ curl -skL "${BINURL}" -o /root/atlassian-confluence-installer_x64.bin && \
    echo "Success" || \
    err_exit 'Failed to download the binary-installer'
 
-# Mount shared filesystems
-SharedMounts
+
+# Shared filesystems done in App-installer due to 
+# having to account for the specific needs of a
+# fresh vs. redeploy install.
