@@ -62,9 +62,9 @@ function MtPersistDir {
         err_exit "Could not create ${DSTDIR}"
    fi
 
-   printf "Attempting to mount %s... " "${MNTPNT}"
-   mount "${SHARESRVR}":/"${TSTMNT}" "${MNTPNT}" && echo "Success" ||
-     err_exit "Failed to mount ${MNTPNT}"
+   printf "Attempting to mount %s... " "${DSTDIR}"
+   mount "${SHARESRVR}":/"${SRCDIR}" "${DSTDIR}" && echo "Success" ||
+     err_exit "Failed to mount ${DSTDIR}"
 }
 
 ##
