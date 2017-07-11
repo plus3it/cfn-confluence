@@ -408,118 +408,11 @@
         "AWS::CloudFormation::Init": {
           "configSets": {
             "default": [
-              "setup",
-              "watchmaker-install",
-              "watchmaker-launch",
-              "finalize",
-              {
-                "Fn::If": [
-                  "Reboot",
-                  "reboot",
-                  { "Ref": "AWS::NoValue" }
-                ]
-              }
-            ],
-            "launch": [
-              "setup",
-              "watchmaker-install",
-              "watchmaker-launch",
-              "finalize",
-              {
-                "Fn::If": [
-                  "Reboot",
-                  "reboot",
-                  { "Ref": "AWS::NoValue" }
-                ]
-              }
-            ],
-            "update": [
-              "setup",
-              {
-                "Fn::If": [
-                  "InstallUpdates",
-                  "install-updates",
-                  { "Ref": "AWS::NoValue" }
-                ]
-              },
-              "watchmaker-install",
-              "watchmaker-update",
-              "finalize",
-              {
-                "Fn::If": [
-                  "Reboot",
-                  "reboot",
-                  { "Ref": "AWS::NoValue" }
-                ]
-              }
+              "config",
+              "watchmaker-install"
             ]
           },
-          "finalize": {
-            "commands": {
-              "10-signal-success": {
-                "command": {
-                  "Fn::Join": [
-                    "",
-                    [
-                      "/opt/aws/bin/cfn-signal -e 0",
-                      " --stack ",
-                      { "Ref": "AWS::StackName" },
-                      " --resource ConfluenceEC2",
-                      {
-                        "Fn::If": [
-                          "AssignInstanceRole",
-                          {
-                            "Fn::Join": [
-                              "",
-                              [
-                                " --role ",
-                                { "Ref": "InstanceRole" }
-                              ]
-                            ]
-                          },
-                          ""
-                        ]
-                      },
-                      {
-                        "Fn::If": [
-                          "UseCfnUrl",
-                          {
-                            "Fn::Join": [
-                              "",
-                              [
-                                " --url ",
-                                { "Ref": "CfnEndpointUrl" }
-                              ]
-                            ]
-                          },
-                          ""
-                        ]
-                      },
-                      " --region ",
-                      { "Ref": "AWS::Region" },
-                      "\n"
-                    ]
-                  ]
-                },
-                "ignoreErrors": "true"
-              }
-            }
-          },
-          "install-updates": {
-            "commands": {
-              "10-install-updates": {
-                "command": "yum -y update"
-              }
-            }
-          },
-          "reboot": {
-            "commands": {
-              "10-reboot": {
-                "command": "shutdown -r +1 &"
-              }
-            }
-          },
-          "setup": {
+          "config": {
             "files": {
               "/etc/cfn/cfn-hup.conf": {
                 "content": {
@@ -671,103 +564,6 @@
                 "command": "bash -xe /etc/cfn/scripts/watchmaker-install.sh"
               }
             }
-          },
-          "watchmaker-launch": {
-            "commands": {
-              "10-watchmaker-launch": {
-                "command": {
-                  "Fn::Join": [
-                    "",
-                    [
-                      "watchmaker --log-level debug",
-                      " --log-dir /var/log/watchmaker",
-                      " --noreboot",
-                      {
-                        "Fn::If": [
-                          "UseWamConfig",
-                          {
-                            "Fn::Join": [
-                              "",
-                              [
-                                " --config \"",
-                                { "Ref": "WatchmakerConfig" },
-                                "\""
-                              ]
-                            ]
-                          },
-                          ""
-                        ]
-                      },
-                      {
-                        "Fn::If": [
-                          "UseEnvironment",
-                          {
-                            "Fn::Join": [
-                              "",
-                              [
-                                " --env \"",
-                                { "Ref": "WatchmakerEnvironment" },
-                                "\""
-                              ]
-                            ]
-                          },
-                          ""
-                        ]
-                      }
-                    ]
-                  ]
-                }
-              }
-            }
-          },
-          "watchmaker-update": {
-            "commands": {
-              "10-watchmaker-update": {
-                "command": {
-                  "Fn::Join": [
-                    "",
-                    [
-                      "watchmaker --log-level debug",
-                      " --log-dir /var/log/watchmaker",
-                      " --saltstates None",
-                      " --noreboot",
-                      {
-                        "Fn::If": [
-                          "UseWamConfig",
-                          {
-                            "Fn::Join": [
-                              "",
-                              [
-                                " --config \"",
-                                { "Ref": "WatchmakerConfig" },
-                                "\""
-                              ]
-                            ]
-                          },
-                          ""
-                        ]
-                      },
-                      {
-                        "Fn::If": [
-                          "UseEnvironment",
-                          {
-                            "Fn::Join": [
-                              "",
-                              [
-                                " --env \"",
-                                { "Ref": "WatchmakerEnvironment" },
-                                "\""
-                              ]
-                            ]
-                          },
-                          ""
-                        ]
-                      }
-                    ]
-                  ]
-                }
-              }
-            }
           }
         }
       },
@@ -903,7 +699,7 @@
                 "runcmd:\n",
                 "  - |\n",
                 "      # Exports used by helper scripts\n",
-                "      export CONFLUENCE_SHARE_PATH=\"",
+                "      export CONFLUENCE_SHARE_SERVER=\"",
                        { "Ref": "ConfluenceSharePath" },
                        "\"\n",
                 "      export CONFLUENCE_SHARE_TYPE=\"",
@@ -981,6 +777,27 @@
                           " err_exit 'OS-prep operation failed'\n",
                 "      else\n",
                 "         err_exit 'Fetched URL content was not a script'\n",
+                "      fi\n",
+                "      if [[ -z ${CONFLUENCE_INSTALLSCRIPT_URL+xxx} ]]\n",
+                "      then\n",
+                "         /opt/aws/bin/cfn-signal -e 0",
+                          " --stack ",
+                          { "Ref" : "AWS::StackName" },
+                          " --resource ConfluenceEC2",
+                          " --region ",
+                          { "Ref" : "AWS::Region"},
+                          "\n",
+                "      else\n",
+                "         curl -skL \"${CONFLUENCE_INSTALLSCRIPT_URL}\" -o",
+                       " /root/confluence_appinstall.sh ||",
+                       " err_exit 'Failed to fetch app-installer'\n",
+                "         /opt/aws/bin/cfn-signal -e 0",
+                          " --stack ",
+                          { "Ref" : "AWS::StackName" },
+                          " --resource ConfluenceEC2",
+                          " --region ",
+                          { "Ref" : "AWS::Region"},
+                          "\n",
                 "      fi\n",
                 "      \n"
               ]
