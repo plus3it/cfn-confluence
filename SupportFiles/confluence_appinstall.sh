@@ -114,7 +114,7 @@ else
    echo "This is a rebuild"
    bash "${BINSTALL}" -q -varfile "${RESPFILE}" || \
      err_exit 'Installer did not run to clean completion'
-   service confluence stop
+   service confluence stop || \
      err_exit 'Failed to stop disposable Confluence install'
    for DIR in opt_atlassian var_atlassian
    do
