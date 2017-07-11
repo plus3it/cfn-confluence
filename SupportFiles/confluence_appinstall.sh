@@ -115,15 +115,18 @@ else
    bash "${BINSTALL}" -q -varfile "${RESPFILE}" || \
      err_exit 'Installer did not run to clean completion'
    service confluence stop
+     err_exit 'Failed to stop disposable Confluence install'
    for DIR in opt_atlassian var_atlassian
    do
       CleanDummy "${DIR}"
       MtPersistDir "${DIR}"
    done
+   service confluence start || \
+     err_exit 'Failed to start re-deployed Confluence application'
 fi
 
 umount "${SHARESRVR}":/ 2> /dev/null || \
   err_exit 'Cannot umount shared filesystems-root'
 
-grep "${SHARESRVR}" /proc/mounts || \
+grep "${SHARESRVR}" /proc/mounts >> /etc/fstab || \
   err_exit 'Failed to update /etc/fstab'
