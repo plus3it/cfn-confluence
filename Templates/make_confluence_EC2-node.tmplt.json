@@ -791,6 +791,8 @@
                 "         curl -skL \"${CONFLUENCE_INSTALLSCRIPT_URL}\" -o",
                           " /root/confluence_appinstall.sh ||",
                           " err_exit 'Failed to fetch app-installer'\n",
+                "         chmod a+x /root/confluence_appinstall.sh ||",
+                          " err_exit 'Failed to make installer executable.'\n",
                 "         /root/confluence_appinstall.sh ||",
                           " err_exit 'App-installation exited with errors'\n",
                 "         /opt/aws/bin/cfn-signal -e 0",
