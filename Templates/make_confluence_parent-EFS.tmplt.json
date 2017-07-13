@@ -376,6 +376,11 @@
       "Description": "URI for the template that creates Confluence's RDS-hoste PGSQL DB.",
       "Type": "String"
     },
+    "RegionTld": {
+      "Default": "amazonaws.com",
+      "Description": "TLD of the Amazon region",
+      "Type": "String"
+    },
     "SgTemplateUri": {
       "AllowedPattern": "^$|^http://.*$|^https://.*$",
       "Description": "URI for the template that creates Confluence's SGs.",
@@ -409,6 +414,75 @@
     }
   },
   "Resources": {
+    "Ec2Res": {
+      "DependsOn": "RdsRes",
+      "Properties": {
+        "Parameters": {
+          "AmiDistro": { "Ref": "AmiDistro" },
+          "AmiId": { "Ref": "AmiId" },
+          "AppVolumeDevice": { "Ref": "AppVolumeDevice" },
+          "AppVolumeMountPath": { "Ref": "AppVolumeMountPath" },
+          "AppVolumeSize": { "Ref": "AppVolumeSize" },
+          "AppVolumeType": { "Ref": "AppVolumeType" },
+          "CfnEndpointUrl": { "Ref": "CfnEndpointUrl" },
+          "ConfluenceInstallBinUrl": { "Ref": "ConfluenceInstallBinUrl" },
+          "ConfluenceInstallerScriptUrl": { "Ref": "ConfluenceInstallerScriptUrl" },
+          "ConfluenceOsPrepUrl": { "Ref": "ConfluenceOsPrepUrl" },
+          "ConfluenceSharePath": {
+	    "Fn::Join": [
+	      "",
+	      [
+	        { "Fn::GetAtt": [ "EfsRes", "Outputs.EfsId" ] },
+                ".efs.",
+	        { "Ref" : "AWS::Region" },
+		".",
+		{ "Ref": "RegionTld" }
+	      ]
+	    ]
+	  },
+          "ConfluenceShareType": { "Ref": "ConfluenceShareType" },
+          "DbAdminName": { "Ref": "DbAdminName" },
+          "DbAdminPass": { "Ref": "DbAdminPass" },
+          "DbFqdn": {
+	    "Fn::GetAtt": [ "RdsRes", "Outputs.RdsEndpointAddress" ]
+	  },
+          "DbInstanceName": { "Ref": "DbInstanceName" },
+          "Domainname": { "Ref": "Domainname" },
+          "EpelRepo": { "Ref": "EpelRepo" },
+          "Hostname": { "Ref": "Hostname" },
+          "InstanceRole": {
+	    "Fn::GetAtt": [ "IamRes", "Outputs.InstanceRoleProfile" ]
+	  },
+          "InstanceType": { "Ref": "InstanceType" },
+          "KeyPairName": { "Ref": "KeyPairName" },
+          "NoPublicIp": { "Ref": "NoPublicIp" },
+          "NoReboot": { "Ref": "NoReboot" },
+          "NoUpdates": { "Ref": "NoUpdates" },
+          "PipRpm": { "Ref": "PipRpm" },
+          "PrivateIp": { "Ref": "PrivateIp" },
+          "ProvisionUser": { "Ref": "ProvisionUser" },
+          "PypiIndexUrl": { "Ref": "PypiIndexUrl" },
+          "PyStache": { "Ref": "PyStache" },
+          "SecurityGroupIds": {
+            "Fn::Join": [
+              ",",
+              [
+                { "Fn::GetAtt": [ "SgRes", "Outputs.AppSg" ] },
+                { "Fn::GetAtt": [ "SgRes", "Outputs.NasSg" ] },
+                { "Fn::GetAtt": [ "SgRes", "Outputs.RdsSg" ] }
+              ]
+            ]
+          },
+          "SubnetId": { "Ref": "SubnetId" },
+          "WatchmakerConfig": { "Ref": "WatchmakerConfig" },
+          "WatchmakerEnvironment": { "Ref": "WatchmakerEnvironment" }
+        },
+        "TemplateURL": {
+          "Ref": "Ec2TemplateUri"
+        }
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    },
     "EfsRes": {
       "DependsOn": "SgRes",
       "Properties": {
