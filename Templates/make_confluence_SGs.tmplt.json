@@ -21,7 +21,7 @@
     "TargetVPC": {
       "AllowedPattern": "^vpc-[0-9a-f]*$",
       "Description": "ID of the VPC to deploy Confluence components into.",
-      "Type": "String"
+      "Type": "AWS::EC2::VPC::Id"
     }
   },
   "Resources": {
