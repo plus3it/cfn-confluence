@@ -1,0 +1,526 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "This template coordinates the running of the Confluence Security-group, EFS, RDS, S3, IAM and EC2 templates.",
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Label": {
+            "default": "Child Template URLs"
+          },
+          "Parameters": [
+            "SgTemplateUri",
+            "EfsTemplateUri",
+            "RdsTemplateUri",
+            "BucketTemplateUri",
+            "IamTemplateUri",
+            "Ec2TemplateUri"
+          ]
+        },
+        {
+          "Label": {
+            "default": "EC2 Instance Configuration"
+          },
+          "Parameters": [
+            "AmiId",
+            "AmiDistro",
+            "InstanceType",
+            "ProvisionUser",
+            "KeyPairName",
+            "Hostname",
+            "Domainname",
+            "NoPublicIp",
+            "TargetVPC",
+            "SubnetId",
+            "NoReboot",
+            "NoUpdates"
+          ]
+        },
+        {
+          "Label": {
+            "default": "System-preparation Parameters"
+          },
+          "Parameters": [
+            "ConfluenceInstallBinUrl",
+            "ConfluenceOsPrepUrl",
+            "ConfluenceInstallerScriptUrl",
+            "ConfluenceShareType",
+            "WatchmakerConfig",
+            "WatchmakerEnvironment"
+          ]
+        },
+        {
+          "Label": {
+            "default": "Database Parameters"
+          },
+          "Parameters": [
+            "PgsqlVersion",
+            "DbSubnets",
+            "DbInstanceType",
+            "DbDataSize",
+            "DbNodeName",
+            "DbInstanceName",
+            "DbAdminName",
+            "DbAdminPass"
+          ]
+        },
+        {
+          "Label": {
+            "default": "Misc. Storage Parameters"
+          },
+          "Parameters": [
+            "EfsSubnet",
+            "AppVolumeDevice",
+            "AppVolumeSize",
+            "AppVolumeType",
+            "AppVolumeMountPath"
+          ]
+        }
+      ],
+      "ParameterLabels": {
+        "BucketTemplateUri": {
+          "default": "S3 Buckets"
+        },
+        "ConfluenceShareType": {
+          "default": "Share Server Type"
+        },
+        "Ec2TemplateUri": {
+          "default": "EC2 Instance"
+        },
+        "EfsTemplateUri": {
+          "default": "EFS Shares"
+        },
+        "IamTemplateUri": {
+          "default": "IAM Roles"
+        },
+        "RdsTemplateUri": {
+          "default": "RDS Database"
+        },
+        "SgTemplateUri": {
+          "default": "Security Groups"
+        },
+        "WatchmakerConfig": {
+          "default": "Misc. Deployment Configs"
+        },
+        "WatchmakerEnvironment": {
+          "default": "Deployment Environment"
+        }
+      }
+    }
+  },
+  "Outputs": {},
+  "Parameters": {
+    "AmiDistro": {
+      "AllowedValues": [
+        "CentOS",
+        "RedHat"
+      ],
+      "Default": "CentOS",
+      "Description": "Linux (Enterprise Linux Compatible) distro of the AMI ",
+      "Type": "String"
+    },
+    "AmiId": {
+      "AllowedPattern": "^ami-[0-9a-z]{8}$|^ami-[0-9a-z]{17}$",
+      "Description": "ID of the AMI to launch",
+      "Type": "String"
+    },
+    "AppVolumeDevice": {
+      "AllowedValues": [
+        "",
+        "/dev/xvdf",
+        "/dev/xvdg",
+        "/dev/xvdh",
+        "/dev/xvdi",
+        "/dev/xvdj"
+      ],
+      "Default": "",
+      "Description": "(Optional) Device to mount an extra EBS volume. Leave blank to launch without an extra application volume",
+      "Type": "String"
+    },
+    "AppVolumeMountPath": {
+      "AllowedPattern": "/.*",
+      "Default": "/opt/data",
+      "Description": "Filesystem path to mount the extra app volume. Ignored if \"AppVolumeDevice\" is blank",
+      "Type": "String"
+    },
+    "AppVolumeSize": {
+      "ConstraintDescription": "Must be between 1GB and 16384GB.",
+      "Default": "20",
+      "Description": "Size in GB of the EBS volume to create. Ignored if \"AppVolumeDevice\" is blank",
+      "MaxValue": "16384",
+      "MinValue": "20",
+      "Type": "Number"
+    },
+    "AppVolumeType": {
+      "AllowedValues": [
+        "gp2",
+        "io1",
+        "sc1",
+        "st1",
+        "standard"
+      ],
+      "Default": "gp2",
+      "Description": "Type of EBS volume to create. Ignored if \"AppVolumeDevice\" is blank",
+      "Type": "String"
+    },
+    "BucketTemplateUri": {
+      "AllowedPattern": "^$|^http://.*$|^https://.*$",
+      "Description": "URI for the template that creates Confluence's S3 buckets.",
+      "Type": "String"
+    },
+    "CfnEndpointUrl": {
+      "AllowedPattern": "^$|^http[s]?://.*$",
+      "Description": "(Optional) URL to the CloudFormation Endpoint. e.g. https://cloudformation.us-east-1.amazonaws.com",
+      "Type": "String"
+    },
+    "ConfluenceInstallBinUrl": {
+      "AllowedPattern": "^$|^http://.*$|^https://.*$",
+      "Description": "URL to Confluence installer-bin.",
+      "Type": "String"
+    },
+    "ConfluenceInstallerScriptUrl": {
+      "AllowedPattern": "^$|^http://.*$|^https://.*$",
+      "Description": "URL to script that installs Confluence to the EC2 instance.",
+      "Type": "String"
+    },
+    "ConfluenceOsPrepUrl": {
+      "AllowedPattern": "^$|^http://.*$|^https://.*$",
+      "Description": "URL to script that prepares the EC2 instance for a Confluence install.",
+      "Type": "String"
+    },
+    "ConfluenceShareType": {
+      "AllowedValues": [
+        "glusterfs",
+        "nfs"
+      ],
+      "Description": "Type of network share hosting shared Confluence content.",
+      "Type": "String"
+    },
+    "DbAdminName": {
+      "Description": "Name of the Confluence master database-user.",
+      "Type": "String"
+    },
+    "DbAdminPass": {
+      "Description": "Password of the Confluence master database-user.",
+      "Type": "String"
+    },
+    "DbDataSize": {
+      "ConstraintDescription": "Must be between 5GB and 16384GB.",
+      "Default": "5",
+      "Description": "Size in GiB of the RDS table-space to create.",
+      "MaxValue": "16384",
+      "MinValue": "5",
+      "Type": "Number"
+    },
+    "DbInstanceName": {
+      "Description": "Instance-name of the Confluence database.",
+      "Type": "String"
+    },
+    "DbInstanceType": {
+      "AllowedValues": [
+        "db.t2.micro",
+        "db.t2.small",
+        "db.t2.medium",
+        "db.t2.large",
+        "db.m3.medium",
+        "db.m3.large",
+        "db.m3.xlarge",
+        "db.m3.2xlarge",
+        "db.m4.large",
+        "db.m4.xlarge",
+        "db.m4.2xlarge",
+        "db.m4.4xlarge",
+        "db.m4.10xlarge",
+        "db.r3.large",
+        "db.r3.xlarge",
+        "db.r3.2xlarge",
+        "db.r3.4xlarge",
+        "db.r3.8xlarge"
+      ],
+      "Default": "db.t2.small",
+      "Description": "Amazon RDS instance type",
+      "Type": "String"
+    },
+    "DbNodeName": {
+      "Description": "NodeName of the Confluence database.",
+      "Type": "String"
+    },
+    "DbSubnets": {
+      "Description": "Select at least two subnets, each in different Availability Zones",
+      "Type": "List<AWS::EC2::Subnet::Id>"
+    },
+    "Domainname": {
+      "ConstraintDescription": "An alphanumeric string to complete the domain portion of the instance's FQDN.",
+      "Description": "Suffix for Confluence's hostname and DNS record",
+      "Type": "String"
+    },
+    "Ec2TemplateUri": {
+      "AllowedPattern": "^$|^http://.*$|^https://.*$",
+      "Description": "URI for the template that creates EC2 instance to host the Confluence Application.",
+      "Type": "String"
+    },
+    "EfsSubnet": {
+      "Description": "Select three subnets - each from different Availability Zones.",
+      "Type": "List<AWS::EC2::Subnet::Id>"
+    },
+    "EfsTemplateUri": {
+      "AllowedPattern": "^$|^http://.*$|^https://.*$",
+      "Description": "URI for the template that creates Confluence's EFS shares.",
+      "Type": "String"
+    },
+    "EpelRepo": {
+      "AllowedPattern": "^[a-z][a-z0-9-]*$",
+      "ConstraintDescription": "An alphanumeric string that represents the EPEL yum repo's label.",
+      "Default": "epel",
+      "Description": "Name of network's EPEL repo.",
+      "Type": "String"
+    },
+    "Hostname": {
+      "ConstraintDescription": "An alphanumeric string to complete the hostname portion of the instance's FQDN.",
+      "Description": "Node-name for Confluence's hostname and DNS record",
+      "Type": "String"
+    },
+    "IamTemplateUri": {
+      "AllowedPattern": "^$|^http://.*$|^https://.*$",
+      "Description": "URI for the template that creates Confluence's Instance roles.",
+      "Type": "String"
+    },
+    "InstanceType": {
+      "AllowedValues": [
+        "t2.micro",
+        "t2.small",
+        "t2.medium",
+        "t2.large",
+        "c4.large",
+        "c4.xlarge",
+        "m4.large",
+        "m4.xlarge"
+      ],
+      "Default": "t2.micro",
+      "Description": "Amazon EC2 instance type",
+      "Type": "String"
+    },
+    "KeyPairName": {
+      "Description": "Public/private key pairs allow you to securely connect to your instance after it launches",
+      "Type": "AWS::EC2::KeyPair::KeyName"
+    },
+    "NoPublicIp": {
+      "AllowedValues": [
+        "false",
+        "true"
+      ],
+      "Default": "true",
+      "Description": "Controls whether to assign the instance a public IP. Recommended to leave at \"true\" _unless_ launching in a public subnet",
+      "Type": "String"
+    },
+    "NoReboot": {
+      "AllowedValues": [
+        "false",
+        "true"
+      ],
+      "Default": "false",
+      "Description": "Controls whether to reboot the instance as the last step of cfn-init execution",
+      "Type": "String"
+    },
+    "NoUpdates": {
+      "AllowedValues": [
+        "false",
+        "true"
+      ],
+      "Default": "false",
+      "Description": "Controls whether to run yum update during a stack update (on the initial instance launch, Watchmaker _always_ installs updates)",
+      "Type": "String"
+    },
+    "PgsqlVersion": {
+      "AllowedValues": [
+        "9.6.2",
+        "9.6.1",
+        "9.5.6",
+        "9.5.4",
+        "9.5.2"
+      ],
+      "Default": "9.5.6",
+      "Description": "The X.Y.Z version of the PostGreSQL database to deploy.",
+      "Type": "String"
+    },
+    "PipRpm": {
+      "Default": "python2-pip",
+      "Description": "Name of preferred pip RPM.",
+      "Type": "String"
+    },
+    "PrivateIp": {
+      "Default": "",
+      "Description": "(Optional) Set a static, primary private IP. Leave blank to auto-select a free IP",
+      "Type": "String"
+    },
+    "ProvisionUser": {
+      "AllowedPattern": "[a-z][a-z0-9]{5,11}+",
+      "ConstraintDescription": "Alphanumeric string between 6 and 12 characters.",
+      "Default": "confbuilder",
+      "Description": "Default login user account name.",
+      "Type": "String"
+    },
+    "PyStache": {
+      "Default": "pystache",
+      "Description": "Name of preferred pystache RPM.",
+      "Type": "String"
+    },
+    "PypiIndexUrl": {
+      "AllowedPattern": "^http[s]?://.*$",
+      "Default": "https://pypi.org/simple",
+      "Description": "URL to the PyPi Index",
+      "Type": "String"
+    },
+    "RdsTemplateUri": {
+      "AllowedPattern": "^$|^http://.*$|^https://.*$",
+      "Description": "URI for the template that creates Confluence's RDS-hoste PGSQL DB.",
+      "Type": "String"
+    },
+    "SgTemplateUri": {
+      "AllowedPattern": "^$|^http://.*$|^https://.*$",
+      "Description": "URI for the template that creates Confluence's SGs.",
+      "Type": "String"
+    },
+    "SubnetId": {
+      "Description": "ID of the subnet to assign to the instance",
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "TargetVPC": {
+      "AllowedPattern": "^vpc-[0-9a-f]*$",
+      "Description": "ID of the VPC to deploy cluster nodes into.",
+      "Type": "AWS::EC2::VPC::Id"
+    },
+    "WatchmakerConfig": {
+      "AllowedPattern": "^$|^http[s]?://.*$",
+      "Default": "",
+      "Description": "(Optional) URL to a Watchmaker config file",
+      "Type": "String"
+    },
+    "WatchmakerEnvironment": {
+      "AllowedValues": [
+        "",
+        "dev",
+        "test",
+        "prod"
+      ],
+      "Default": "",
+      "Description": "Environment in which the instance is being deployed",
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "EfsRes": {
+      "DependsOn": "SgRes",
+      "Properties": {
+        "Parameters": {
+          "EfsSg": {
+            "Fn::GetAtt": [
+              "SgRes",
+              "Outputs.NasSg"
+            ]
+          },
+          "EfsSubnet": {
+            "Fn::Join": [
+              ",",
+              { "Ref": "EfsSubnet" }
+            ]
+          }
+        },
+        "TemplateURL": {
+          "Ref": "EfsTemplateUri"
+        }
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    },
+    "IamRes": {
+      "DependsOn": "S3Res",
+      "Properties": {
+        "Parameters": {
+          "BackupBucketArn": {
+            "Fn::GetAtt": [
+              "S3Res",
+              "Outputs.BucketArn"
+            ]
+          }
+        },
+        "TemplateURL": {
+          "Ref": "IamTemplateUri"
+        },
+        "TimeoutInMinutes": "10"
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    },
+    "RdsRes": {
+      "DependsOn": "SgRes",
+      "Properties": {
+        "Parameters": {
+          "DbAdminName": {
+            "Ref": "DbAdminName"
+          },
+          "DbAdminPass": {
+            "Ref": "DbAdminPass"
+          },
+          "DbDataSize": {
+            "Ref": "DbDataSize"
+          },
+          "DbInstanceName": {
+            "Ref": "DbInstanceName"
+          },
+          "DbInstanceType": {
+            "Ref": "DbInstanceType"
+          },
+          "DbNodeName": {
+            "Ref": "DbNodeName"
+          },
+          "DbSecurityGroup": {
+            "Fn::GetAtt": [
+              "SgRes",
+              "Outputs.RdsSg"
+            ]
+          },
+          "DbSubnets": {
+            "Fn::Join": [
+              ",",
+              {
+                "Ref": "DbSubnets"
+              }
+            ]
+          },
+          "PgsqlVersion": {
+            "Ref": "PgsqlVersion"
+          },
+          "TargetVPC": {
+            "Ref": "TargetVPC"
+          }
+        },
+        "TemplateURL": {
+          "Ref": "RdsTemplateUri"
+        }
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    },
+    "S3Res": {
+      "Properties": {
+        "TemplateURL": {
+          "Ref": "BucketTemplateUri"
+        },
+        "TimeoutInMinutes": "10"
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    },
+    "SgRes": {
+      "Properties": {
+        "Parameters": {
+          "TargetVPC": {
+            "Ref": "TargetVPC"
+          }
+        },
+        "TemplateURL": {
+          "Ref": "SgTemplateUri"
+        },
+        "TimeoutInMinutes": "10"
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    }
+  }
+}
