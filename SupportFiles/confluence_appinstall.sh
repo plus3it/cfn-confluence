@@ -9,7 +9,7 @@ BINSTALL=/root/atlassian-confluence-installer_x64.bin
 RESPFILE=/root/response.varfile
 SHARESRVR="${CONFLUENCE_SHARE_SERVER:-UNDEF}"
 PROXY="${CONFLUENCE_PROXY_FQDN:-UNDEF}"
-SEVERXML="/opt/atlassian/confluence/conf/server.xml"
+SERVERXML="/opt/atlassian/confluence/conf/server.xml"
 
 ##
 ## Set up an error logging and exit-state
