@@ -8,7 +8,7 @@ SELMODE="$(awk -F= '/^SELINUX=/{print $2}' /etc/selinux/config)"
 BINSTALL=/root/atlassian-confluence-installer_x64.bin
 RESPFILE=/root/response.varfile
 SHARESRVR="${CONFLUENCE_SHARE_SERVER:-UNDEF}"
-PROXY="${CONFLUENCE_PROXY_FQDN:-UNDEF}"
+PROXYFQDN="${CONFLUENCE_PROXY_FQDN:-UNDEF}"
 SERVERXML="/opt/atlassian/confluence/conf/server.xml"
 
 ##
@@ -83,6 +83,8 @@ function CleanDummy {
 
 ##
 ## Main script logic
+setenforce 0
+
 
 # Make ready for unattended install
 cat > "${RESPFILE}" << EOF
@@ -106,14 +108,27 @@ then
    bash "${BINSTALL}" -q -varfile "${RESPFILE}" || \
      err_exit 'Installer did not run to clean completion'
 
+   while [[ $( netstat -46ln | grep -q :8000 )$? -ne 0 ]]
+   do
+      echo "Waiting for Confluence to finish initial start-up..."
+      sleep 10
+   done
+
    printf 'Attempting to stop Confluence for reconfiguration... '
-   systemctl stop confluence && echo 'Success' || \
+   service confluence stop && echo 'Success' || \
      err_exit 'Failed to stop Confluence'
 
+   echo "Relocating to persistent storage..."
    mv /opt/atlassian /mnt/opt_atlassian || \
      err_exit 'Failed to re-home /opt/atlassian to persistent storage'
    mv /var/atlassian /mnt/var_atlassian || \
      err_exit 'Failed to re-home /var/atlassian to persistent storage'
+
+   # Create and mount persistent-content dirs
+   for DIR in opt_atlassian var_atlassian
+   do
+      MtPersistDir "${DIR}"
+   done
 
    # Make sure Confluence doesn't complain about being behind an ELB
    if [[ ${PROXY} = UNDEF ]]
@@ -124,27 +139,28 @@ then
       printf 'Attempting to add proxy-host to server.xml... '
       # shellcheck disable=SC1004
       sed -i '/Connector port="8090"/a \
-                   proxyName="'${PROXYFQDN}'" proxyPort="443" scheme="https"' "${SERVERXML}" &&
+                proxyName="'${PROXYFQDN}'" proxyPort="443" scheme="https"' "${SERVERXML}" &&
         echo 'Success' || \
         err_exit 'Failed to add proxy-host to server.xml'
    else
       err_exit "Unable to find ${SERVERXML} to massage"
    fi
 
-   # Create and mount persistent-content dirs
-   for DIR in opt_atlassian var_atlassian
-   do
-      MtPersistDir "${DIR}"
-   done
-
    printf 'Attempting post-reconfiguration restart of Confluence... '
-   systemctl start confluence || echo 'Success'
+   service confluence start && echo 'Success' || \
      err_exit 'Failed to restart Confluence'
 
 else
    echo "This is a rebuild"
    bash "${BINSTALL}" -q -varfile "${RESPFILE}" || \
      err_exit 'Installer did not run to clean completion'
+
+   while [[ $( netstat -46ln | grep -q :8000 )$? -ne 0 ]]
+   do
+      echo "Waiting for Confluence to finish initial start-up..."
+      sleep 10
+   done
+
    service confluence stop || \
      err_exit 'Failed to stop disposable Confluence install'
    for DIR in opt_atlassian var_atlassian
@@ -161,3 +177,5 @@ umount "${SHARESRVR}":/ 2> /dev/null || \
 
 grep "${SHARESRVR}" /proc/mounts >> /etc/fstab || \
   err_exit 'Failed to update /etc/fstab'
+
+setenforce ${SELMODE}
