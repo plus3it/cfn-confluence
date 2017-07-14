@@ -188,6 +188,10 @@
       "Description": "URL to script that prepares the EC2 instance for a Confluence install.",
       "Type": "String"
     },
+    "ConfluenceProxyFqdn": {
+      "Description": "Fully-qualified domainname of the Confluence reverse-proxy host.",
+      "Type": "String"
+    },
     "ConfluenceShareType": {
       "AllowedValues": [
         "glusterfs",
@@ -428,6 +432,7 @@
           "ConfluenceInstallBinUrl": { "Ref": "ConfluenceInstallBinUrl" },
           "ConfluenceInstallerScriptUrl": { "Ref": "ConfluenceInstallerScriptUrl" },
           "ConfluenceOsPrepUrl": { "Ref": "ConfluenceOsPrepUrl" },
+          "ConfluenceProxyFqdn": { "Ref": "ConfluenceProxyFqdn" },
           "ConfluenceSharePath": {
 	    "Fn::Join": [
 	      "",

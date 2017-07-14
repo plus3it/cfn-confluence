@@ -245,6 +245,10 @@
       "Description": "URL to script that prepares the EC2 instance for a Confluence install.",
       "Type": "String"
     },
+    "ConfluenceProxyFqdn": {
+      "Description": "Fully-qualified domainname of the Confluence reverse-proxy host.",
+      "Type": "String"
+    },
     "ConfluenceSharePath": {
       "Default": "",
       "Description": "Share-path of shared Confluence content.",
@@ -707,6 +711,9 @@
                        "\"\n",
                 "      export CONFLUENCE_OSPREP_URI=\"",
                        { "Ref": "ConfluenceOsPrepUrl" },
+                       "\"\n",
+                "      export CONFLUENCE_PROXY_FQDN=\"",
+                       { "Ref": "ConfluenceProxyFqdn" },
                        "\"\n",
                 "      export CONFLUENCE_INSTALLBIN_URL=\"",
                        { "Ref": "ConfluenceInstallBinUrl" },
