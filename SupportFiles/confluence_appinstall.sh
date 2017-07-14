@@ -8,6 +8,8 @@ SELMODE="$(awk -F= '/^SELINUX=/{print $2}' /etc/selinux/config)"
 BINSTALL=/root/atlassian-confluence-installer_x64.bin
 RESPFILE=/root/response.varfile
 SHARESRVR="${CONFLUENCE_SHARE_SERVER:-UNDEF}"
+PROXY="${CONFLUENCE_PROXY_FQDN:-UNDEF}"
+SEVERXML="/opt/atlassian/confluence/conf/server.xml"
 
 ##
 ## Set up an error logging and exit-state
@@ -101,15 +103,44 @@ if [ "$(find /mnt -name server.xml)" = "" ]
 then
    echo "This is a fresh install"
 
+   bash "${BINSTALL}" -q -varfile "${RESPFILE}" || \
+     err_exit 'Installer did not run to clean completion'
+
+   printf 'Attempting to stop Confluence for reconfiguration... '
+   systemctl stop confluence && echo 'Success' || \
+     err_exit 'Failed to stop Confluence'
+
+   mv /opt/atlassian /mnt/opt_atlassian || \
+     err_exit 'Failed to re-home /opt/atlassian to persistent storage'
+   mv /var/atlassian /mnt/var_atlassian || \
+     err_exit 'Failed to re-home /var/atlassian to persistent storage'
+
+   # Make sure Confluence doesn't complain about being behind an ELB
+   if [[ ${PROXY} = UNDEF ]]
+   then
+      echo "No proxy-host passed to install-wrapper."
+   elif [[ -e ${SERVERXML} ]]
+   then
+      printf 'Attempting to add proxy-host to server.xml... '
+      # shellcheck disable=SC1004
+      sed -i '/Connector port="8090"/a \
+                   proxyName="'${PROXYFQDN}'" proxyPort="443" scheme="https"' "${SERVERXML}" &&
+        echo 'Success' || \
+        err_exit 'Failed to add proxy-host to server.xml'
+   else
+      err_exit "Unable to find ${SERVERXML} to massage"
+   fi
+
    # Create and mount persistent-content dirs
    for DIR in opt_atlassian var_atlassian
    do
-      MkPersistDir "${DIR}" 
       MtPersistDir "${DIR}"
    done
 
-   bash "${BINSTALL}" -q -varfile "${RESPFILE}" || \
-     err_exit 'Installer did not run to clean completion'
+   printf 'Attempting post-reconfiguration restart of Confluence... '
+   systemctl start confluence || echo 'Success'
+     err_exit 'Failed to restart Confluence'
+
 else
    echo "This is a rebuild"
    bash "${BINSTALL}" -q -varfile "${RESPFILE}" || \
