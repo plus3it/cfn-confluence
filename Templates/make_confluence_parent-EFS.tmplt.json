@@ -110,6 +110,11 @@
   },
   "Outputs": {},
   "Parameters": {
+    "AdminPubkeyURL": {
+      "Description": "URL the file containing the admin users' SSH public keys.",
+      "Type": "String",
+      "AllowedPattern": "^$|^http://.*$|^https://.*$"
+    },
     "AmiDistro": {
       "AllowedValues": [
         "CentOS",
@@ -422,6 +427,7 @@
       "DependsOn": "RdsRes",
       "Properties": {
         "Parameters": {
+          "AdminPubkeyURL": { "Ref": "AdminPubkeyURL" },
           "AmiDistro": { "Ref": "AmiDistro" },
           "AmiId": { "Ref": "AmiId" },
           "AppVolumeDevice": { "Ref": "AppVolumeDevice" },

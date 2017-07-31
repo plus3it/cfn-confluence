@@ -124,7 +124,8 @@
             "NoUpdates",
             "Hostname",
             "Domainname",
-            "SecurityGroupIds"
+            "SecurityGroupIds",
+            "AdminPubkeyURL"
           ]
         },
         {
@@ -171,6 +172,11 @@
     }
   },
   "Parameters": {
+    "AdminPubkeyURL":{
+      "Description": "URL the file containing the admin group's SSH public keys.",
+      "Type": "String",
+      "AllowedPattern": "^$|^http://.*$|^https://.*$"
+    },
     "AmiDistro": {
       "AllowedValues": [
         "CentOS",
@@ -770,6 +776,16 @@
                 "      echo 'Stow script ENVs for later use...'\n",
                 "      install -b -m 0400 /dev/null /etc/cfn/Confluence.envs\n",
                 "      env | grep CONFLUENCE > /etc/cfn/Confluence.envs\n",
+                "      \n",
+                "      # Install admin-groups keys to provisioning user\n",
+                "      curl -skL ",
+                          { "Ref" : "AdminPubkeyURL" },
+                          " -o /tmp/admin.keys || error_exit ",
+                          "'Could not download admin keys'\n",
+                "      cat /tmp/admin.keys >> /home/",
+                          { "Ref" : "ProvisionUser" },
+                          "/.ssh/authorized_keys || error_exit ",
+                          "'Could not add admin keys'\n",
                 "      \n",
                 "      # Fetch and run the OS-prep script\n",
                 "      printf 'Fetching OS-prep script... '\n",
