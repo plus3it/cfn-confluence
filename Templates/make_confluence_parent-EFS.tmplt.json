@@ -27,11 +27,13 @@
             "InstanceType",
             "ProvisionUser",
             "KeyPairName",
+            "AdminPubkeyURL",
             "Hostname",
             "Domainname",
-            "NoPublicIp",
-            "TargetVPC",
             "SubnetId",
+            "PrivateIp",
+            "RolePrefix",
+            "NoPublicIp",
             "NoReboot",
             "NoUpdates"
           ]
@@ -41,6 +43,7 @@
             "default": "System-preparation Parameters"
           },
           "Parameters": [
+            "ConfluenceProxyFqdn",
             "ConfluenceInstallBinUrl",
             "ConfluenceOsPrepUrl",
             "ConfluenceInstallerScriptUrl",
@@ -55,7 +58,6 @@
           },
           "Parameters": [
             "PgsqlVersion",
-            "DbSubnets",
             "DbInstanceType",
             "DbDataSize",
             "DbNodeName",
@@ -69,11 +71,25 @@
             "default": "Misc. Storage Parameters"
           },
           "Parameters": [
-            "EfsSubnet",
             "AppVolumeDevice",
             "AppVolumeSize",
             "AppVolumeType",
             "AppVolumeMountPath"
+          ]
+        },
+        {
+          "Label": {
+            "default": "Miscellaneous"
+          },
+          "Parameters": [
+            "ServiceTld",
+            "TargetVPC",
+            "HaSubnets",
+            "ConfluenceProxyFqdn",
+            "EpelRepo",
+            "PipRpm",
+            "PyStache",
+            "PypiIndexUrl"
           ]
         }
       ],
@@ -111,9 +127,9 @@
   "Outputs": {},
   "Parameters": {
     "AdminPubkeyURL": {
+      "AllowedPattern": "^$|^http://.*$|^https://.*$",
       "Description": "URL the file containing the admin users' SSH public keys.",
-      "Type": "String",
-      "AllowedPattern": "^$|^http://.*$|^https://.*$"
+      "Type": "String"
     },
     "AmiDistro": {
       "AllowedValues": [
@@ -171,11 +187,6 @@
     "BucketTemplateUri": {
       "AllowedPattern": "^$|^http://.*$|^https://.*$",
       "Description": "URI for the template that creates Confluence's S3 buckets.",
-      "Type": "String"
-    },
-    "CfnEndpointUrl": {
-      "AllowedPattern": "^$|^http[s]?://.*$",
-      "Description": "(Optional) URL to the CloudFormation Endpoint. e.g. https://cloudformation.us-east-1.amazonaws.com",
       "Type": "String"
     },
     "ConfluenceInstallBinUrl": {
@@ -246,17 +257,13 @@
         "db.r3.4xlarge",
         "db.r3.8xlarge"
       ],
-      "Default": "db.t2.small",
+      "Default": "db.m4.large",
       "Description": "Amazon RDS instance type",
       "Type": "String"
     },
     "DbNodeName": {
       "Description": "NodeName of the Confluence database.",
       "Type": "String"
-    },
-    "DbSubnets": {
-      "Description": "Select at least two subnets, each in different Availability Zones",
-      "Type": "List<AWS::EC2::Subnet::Id>"
     },
     "Domainname": {
       "ConstraintDescription": "An alphanumeric string to complete the domain portion of the instance's FQDN.",
@@ -267,10 +274,6 @@
       "AllowedPattern": "^$|^http://.*$|^https://.*$",
       "Description": "URI for the template that creates EC2 instance to host the Confluence Application.",
       "Type": "String"
-    },
-    "EfsSubnet": {
-      "Description": "Select three subnets - each from different Availability Zones.",
-      "Type": "List<AWS::EC2::Subnet::Id>"
     },
     "EfsTemplateUri": {
       "AllowedPattern": "^$|^http://.*$|^https://.*$",
@@ -283,6 +286,10 @@
       "Default": "epel",
       "Description": "Name of network's EPEL repo.",
       "Type": "String"
+    },
+    "HaSubnets": {
+      "Description": "Select three subnets - each from different Availability Zones.",
+      "Type": "List<AWS::EC2::Subnet::Id>"
     },
     "Hostname": {
       "ConstraintDescription": "An alphanumeric string to complete the hostname portion of the instance's FQDN.",
@@ -342,13 +349,15 @@
     },
     "PgsqlVersion": {
       "AllowedValues": [
+        "9.6.3",
         "9.6.2",
         "9.6.1",
+        "9.5.7",
         "9.5.6",
         "9.5.4",
         "9.5.2"
       ],
-      "Default": "9.5.6",
+      "Default": "9.5.7",
       "Description": "The X.Y.Z version of the PostGreSQL database to deploy.",
       "Type": "String"
     },
@@ -383,11 +392,6 @@
     "RdsTemplateUri": {
       "AllowedPattern": "^$|^http://.*$|^https://.*$",
       "Description": "URI for the template that creates Confluence's RDS-hoste PGSQL DB.",
-      "Type": "String"
-    },
-    "RegionTld": {
-      "Default": "amazonaws.com",
-      "Description": "TLD of the Amazon region",
       "Type": "String"
     },
     "RolePrefix": {
@@ -443,36 +447,36 @@
           "AppVolumeMountPath": { "Ref": "AppVolumeMountPath" },
           "AppVolumeSize": { "Ref": "AppVolumeSize" },
           "AppVolumeType": { "Ref": "AppVolumeType" },
-          "CfnEndpointUrl": { "Ref": "CfnEndpointUrl" },
+          "CfnEndpointUrl": {
+            "Fn::Join": [
+              ".",
+              [
+                "https://cloudformation",
+                { "Ref": "AWS::Region" },
+                { "Ref": "ServiceTld" }
+              ]
+            ]
+          },
           "ConfluenceInstallBinUrl": { "Ref": "ConfluenceInstallBinUrl" },
           "ConfluenceInstallerScriptUrl": { "Ref": "ConfluenceInstallerScriptUrl" },
           "ConfluenceOsPrepUrl": { "Ref": "ConfluenceOsPrepUrl" },
           "ConfluenceProxyFqdn": { "Ref": "ConfluenceProxyFqdn" },
           "ConfluenceSharePath": {
-	    "Fn::Join": [
-	      "",
-	      [
-	        { "Fn::GetAtt": [ "EfsRes", "Outputs.EfsId" ] },
-                ".efs.",
-	        { "Ref" : "AWS::Region" },
-		".",
-		{ "Ref": "RegionTld" }
-	      ]
-	    ]
-	  },
+            "Fn::GetAtt": [ "EfsRes", "Outputs.EfsEndpoint" ]
+          },
           "ConfluenceShareType": { "Ref": "ConfluenceShareType" },
           "DbAdminName": { "Ref": "DbAdminName" },
           "DbAdminPass": { "Ref": "DbAdminPass" },
           "DbFqdn": {
-	    "Fn::GetAtt": [ "RdsRes", "Outputs.RdsEndpointAddress" ]
-	  },
+            "Fn::GetAtt": [ "RdsRes", "Outputs.RdsEndpointAddress" ]
+          },
           "DbInstanceName": { "Ref": "DbInstanceName" },
           "Domainname": { "Ref": "Domainname" },
           "EpelRepo": { "Ref": "EpelRepo" },
           "Hostname": { "Ref": "Hostname" },
           "InstanceRole": {
-	    "Fn::GetAtt": [ "IamRes", "Outputs.InstanceRoleProfile" ]
-	  },
+            "Fn::GetAtt": [ "IamRes", "Outputs.InstanceRoleProfile" ]
+          },
           "InstanceType": { "Ref": "InstanceType" },
           "KeyPairName": { "Ref": "KeyPairName" },
           "NoPublicIp": { "Ref": "NoPublicIp" },
@@ -481,8 +485,8 @@
           "PipRpm": { "Ref": "PipRpm" },
           "PrivateIp": { "Ref": "PrivateIp" },
           "ProvisionUser": { "Ref": "ProvisionUser" },
-          "PypiIndexUrl": { "Ref": "PypiIndexUrl" },
           "PyStache": { "Ref": "PyStache" },
+          "PypiIndexUrl": { "Ref": "PypiIndexUrl" },
           "SecurityGroupIds": {
             "Fn::Join": [
               ",",
@@ -497,9 +501,7 @@
           "WatchmakerConfig": { "Ref": "WatchmakerConfig" },
           "WatchmakerEnvironment": { "Ref": "WatchmakerEnvironment" }
         },
-        "TemplateURL": {
-          "Ref": "Ec2TemplateUri"
-        }
+        "TemplateURL": { "Ref": "Ec2TemplateUri" }
       },
       "Type": "AWS::CloudFormation::Stack"
     },
@@ -507,20 +509,21 @@
       "DependsOn": "SgRes",
       "Properties": {
         "Parameters": {
-          "EfsSg": { "Fn::GetAtt": [ "SgRes", "Outputs.NasSg" ] },
+          "EfsSg": {
+            "Fn::GetAtt": [
+              "SgRes",
+              "Outputs.NasSg"
+            ]
+          },
           "EfsSubnet": {
             "Fn::Join": [
               ",",
-              { "Ref": "EfsSubnet" }
+              { "Ref": "HaSubnets" }
             ]
           },
-          "ServiceTld": {
-            "Ref": "ServiceTld"
-          }
+          "ServiceTld": { "Ref": "ServiceTld" }
         },
-        "TemplateURL": {
-          "Ref": "EfsTemplateUri"
-        }
+        "TemplateURL": { "Ref": "EfsTemplateUri" }
       },
       "Type": "AWS::CloudFormation::Stack"
     },
@@ -532,9 +535,7 @@
           "RolePrefix": { "Ref": "RolePrefix" },
           "ServiceTld": { "Ref": "ServiceTld" }
         },
-        "TemplateURL": {
-          "Ref": "IamTemplateUri"
-        },
+        "TemplateURL": { "Ref": "IamTemplateUri" },
         "TimeoutInMinutes": "10"
       },
       "Type": "AWS::CloudFormation::Stack"
@@ -543,56 +544,30 @@
       "DependsOn": "SgRes",
       "Properties": {
         "Parameters": {
-          "DbAdminName": {
-            "Ref": "DbAdminName"
-          },
-          "DbAdminPass": {
-            "Ref": "DbAdminPass"
-          },
-          "DbDataSize": {
-            "Ref": "DbDataSize"
-          },
-          "DbInstanceName": {
-            "Ref": "DbInstanceName"
-          },
-          "DbInstanceType": {
-            "Ref": "DbInstanceType"
-          },
-          "DbNodeName": {
-            "Ref": "DbNodeName"
-          },
-          "DbSecurityGroup": {
-            "Fn::GetAtt": [
-              "SgRes",
-              "Outputs.RdsSg"
-            ]
-          },
+          "DbAdminName": { "Ref": "DbAdminName" },
+          "DbAdminPass": { "Ref": "DbAdminPass" },
+          "DbDataSize": { "Ref": "DbDataSize" },
+          "DbInstanceName": { "Ref": "DbInstanceName" },
+          "DbInstanceType": { "Ref": "DbInstanceType" },
+          "DbIsMultiAz": "true",
+          "DbNodeName": { "Ref": "DbNodeName" },
+          "DbSecurityGroup": { "Fn::GetAtt": [ "SgRes", "Outputs.RdsSg" ] },
           "DbSubnets": {
             "Fn::Join": [
               ",",
-              {
-                "Ref": "DbSubnets"
-              }
+              { "Ref": "HaSubnets" }
             ]
           },
-          "PgsqlVersion": {
-            "Ref": "PgsqlVersion"
-          },
-          "TargetVPC": {
-            "Ref": "TargetVPC"
-          }
+          "PgsqlVersion": { "Ref": "PgsqlVersion" },
+          "TargetVPC": { "Ref": "TargetVPC" }
         },
-        "TemplateURL": {
-          "Ref": "RdsTemplateUri"
-        }
+        "TemplateURL": { "Ref": "RdsTemplateUri" }
       },
       "Type": "AWS::CloudFormation::Stack"
     },
     "S3Res": {
       "Properties": {
-        "TemplateURL": {
-          "Ref": "BucketTemplateUri"
-        },
+        "TemplateURL": { "Ref": "BucketTemplateUri" },
         "TimeoutInMinutes": "10"
       },
       "Type": "AWS::CloudFormation::Stack"
@@ -600,13 +575,9 @@
     "SgRes": {
       "Properties": {
         "Parameters": {
-          "TargetVPC": {
-            "Ref": "TargetVPC"
-          }
+          "TargetVPC": { "Ref": "TargetVPC" }
         },
-        "TemplateURL": {
-          "Ref": "SgTemplateUri"
-        },
+        "TemplateURL": { "Ref": "SgTemplateUri" },
         "TimeoutInMinutes": "10"
       },
       "Type": "AWS::CloudFormation::Stack"
