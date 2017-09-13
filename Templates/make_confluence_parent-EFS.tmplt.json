@@ -394,6 +394,11 @@
       "Description": "Prefix to apply to IAM role to make things a bit prettier (optional).",
       "Type": "String"
     },
+    "ServiceTld": {
+      "Default": "amazonaws.com",
+      "Description": "TLD of the IAMable service-name.",
+      "Type": "String"
+    },
     "SgTemplateUri": {
       "AllowedPattern": "^$|^http://.*$|^https://.*$",
       "Description": "URI for the template that creates Confluence's SGs.",
@@ -502,17 +507,15 @@
       "DependsOn": "SgRes",
       "Properties": {
         "Parameters": {
-          "EfsSg": {
-            "Fn::GetAtt": [
-              "SgRes",
-              "Outputs.NasSg"
-            ]
-          },
+          "EfsSg": { "Fn::GetAtt": [ "SgRes", "Outputs.NasSg" ] },
           "EfsSubnet": {
             "Fn::Join": [
               ",",
               { "Ref": "EfsSubnet" }
             ]
+          },
+          "ServiceTld": {
+            "Ref": "ServiceTld"
           }
         },
         "TemplateURL": {
@@ -526,7 +529,8 @@
       "Properties": {
         "Parameters": {
           "BackupBucketArn": { "Fn::GetAtt": [ "S3Res", "Outputs.BucketArn" ] },
-          "RolePrefix": { "Ref": "RolePrefix" }
+          "RolePrefix": { "Ref": "RolePrefix" },
+          "ServiceTld": { "Ref": "ServiceTld" }
         },
         "TemplateURL": {
           "Ref": "IamTemplateUri"
