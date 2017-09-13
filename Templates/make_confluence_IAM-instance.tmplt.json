@@ -1,9 +1,20 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
+  "Conditions": {
+    "PrettyRole": {
+      "Fn::Not": [
+        { "Fn::Equals": [ { "Ref": "RolePrefix" }, "" ] }
+      ]
+    }
+  },
   "Description": "This template sets up the IAM role needed by an Confluence instance",
   "Parameters": {
     "BackupBucketArn": {
       "Description": "S3 Bucket to host Confluence backups",
+      "Type": "String"
+    },
+    "RolePrefix": {
+      "Description": "Prefix to apply to IAM role to make things a bit prettier (optional).",
       "Type": "String"
     }
   },
@@ -59,7 +70,21 @@
             }
           }]
         },
-        "Path": "/"
+        "Path": "/",
+        "RoleName": {
+          "Fn::If": [
+            "PrettyRole", {
+              "Fn::Join": [
+                "-",
+                [
+                  { "Ref": "RolePrefix" },
+                  { "Ref": "AWS::StackName" }
+                ]
+              ]
+            },
+            { "Ref": "AWS::NoValue" }
+          ]
+        }
       }
     },
     "InstanceProfile": {

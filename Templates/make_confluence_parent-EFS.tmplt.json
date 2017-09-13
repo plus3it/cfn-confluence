@@ -390,6 +390,10 @@
       "Description": "TLD of the Amazon region",
       "Type": "String"
     },
+    "RolePrefix": {
+      "Description": "Prefix to apply to IAM role to make things a bit prettier (optional).",
+      "Type": "String"
+    },
     "SgTemplateUri": {
       "AllowedPattern": "^$|^http://.*$|^https://.*$",
       "Description": "URI for the template that creates Confluence's SGs.",
@@ -521,12 +525,8 @@
       "DependsOn": "S3Res",
       "Properties": {
         "Parameters": {
-          "BackupBucketArn": {
-            "Fn::GetAtt": [
-              "S3Res",
-              "Outputs.BucketArn"
-            ]
-          }
+          "BackupBucketArn": { "Fn::GetAtt": [ "S3Res", "Outputs.BucketArn" ] },
+          "RolePrefix": { "Ref": "RolePrefix" }
         },
         "TemplateURL": {
           "Ref": "IamTemplateUri"
