@@ -1,6 +1,10 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Conditions": {},
+  "Conditions": {
+    "SetNodeName": {
+      "Fn::Not": [ { "Fn::Equals": [ { "Ref": "DbNodeName" }, "" ] } ]
+    }
+  },
   "Description": "This template deployes a small, single-AZ PGSQL database to support Confluence.",
   "Mappings": {},
   "Metadata": {},
@@ -95,7 +99,13 @@
         "AutoMinorVersionUpgrade": "true",
         "BackupRetentionPeriod": "7",
         "DBInstanceClass": { "Ref": "DbInstanceType" },
-        "DBInstanceIdentifier": { "Ref": "DbNodeName" },
+        "DBInstanceIdentifier": {
+          "Fn::If": [
+            "SetNodeName",
+            { "Ref": "DbNodeName" },
+            { "Ref": "AWS::NoValue" }
+          ]
+        },
         "DBName": { "Ref": "DbInstanceName" },
         "DBSubnetGroupName" : { "Ref" : "RDSdbSubnetGroup" },
         "Engine": "postgres",
