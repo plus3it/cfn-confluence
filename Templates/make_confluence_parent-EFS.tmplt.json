@@ -14,7 +14,8 @@
             "RdsTemplateUri",
             "BucketTemplateUri",
             "IamTemplateUri",
-            "Ec2TemplateUri"
+            "Ec2TemplateUri",
+            "ELbTemplateUri"
           ]
         },
         {
@@ -75,6 +76,18 @@
             "AppVolumeSize",
             "AppVolumeType",
             "AppVolumeMountPath"
+          ]
+        },
+        {
+          "Label": {
+            "default": "ELB Parameters"
+          },
+          "Parameters": [
+            "ProxyPrettyName",
+            "ConfluenceListenerCert",
+            "ConfluenceListenPort",
+            "ConfluenceServicePort",
+            "PubElbSubnets"
           ]
         },
         {
@@ -199,6 +212,18 @@
       "Description": "URL to script that installs Confluence to the EC2 instance.",
       "Type": "String"
     },
+    "ConfluenceListenPort": {
+      "Default": "443",
+      "Description": "TCP Port number on which the Confluence ELB listens for requests.",
+      "MaxValue": "65535",
+      "MinValue": "1",
+      "Type": "Number"
+    },
+    "ConfluenceListenerCert": {
+      "Default": "",
+      "Description": "Name/ID of the ACM-managed SSL Certificate to protect public listener.",
+      "Type": "String"
+    },
     "ConfluenceOsPrepUrl": {
       "AllowedPattern": "^$|^http://.*$|^https://.*$",
       "Description": "URL to script that prepares the EC2 instance for a Confluence install.",
@@ -207,6 +232,12 @@
     "ConfluenceProxyFqdn": {
       "Description": "Fully-qualified domainname of the Confluence reverse-proxy host.",
       "Type": "String"
+    },
+    "ConfluenceServicePort": {
+      "Default": "8090",
+      "Description": "TCP Port number that the Confluence host listens to.",
+      "MaxValue": "65535",
+      "Type": "Number"
     },
     "ConfluenceShareType": {
       "AllowedValues": [
@@ -278,6 +309,11 @@
     "EfsTemplateUri": {
       "AllowedPattern": "^$|^http://.*$|^https://.*$",
       "Description": "URI for the template that creates Confluence's EFS shares.",
+      "Type": "String"
+    },
+    "ELbTemplateUri": {
+      "AllowedPattern": "^$|^http://.*$|^https://.*$",
+      "Description": "URI for the template that creates ELB proxy providing client-access to the Confluence Application.",
       "Type": "String"
     },
     "EpelRepo": {
@@ -378,6 +414,14 @@
       "Description": "Default login user account name.",
       "Type": "String"
     },
+    "ProxyPrettyName": {
+      "Description": "A short, human-friendly label to assign to the ELB (no capital letters).",
+      "Type": "String"
+    },
+    "PubElbSubnets": {
+      "Description": "Select three subnets - each from different, user-facing Availability Zones.",
+      "Type": "List<AWS::EC2::Subnet::Id>"
+    },
     "PyStache": {
       "Default": "pystache",
       "Description": "Name of preferred pystache RPM.",
@@ -397,6 +441,10 @@
     "RolePrefix": {
       "Description": "Prefix to apply to IAM role to make things a bit prettier (optional).",
       "Type": "String"
+    },
+    "SecurityGroupIds": {
+      "Description": "List of security groups to apply to the ELB.",
+      "Type": "List<AWS::EC2::SecurityGroup::Id>"
     },
     "ServiceTld": {
       "Default": "amazonaws.com",
@@ -458,7 +506,9 @@
             ]
           },
           "ConfluenceInstallBinUrl": { "Ref": "ConfluenceInstallBinUrl" },
-          "ConfluenceInstallerScriptUrl": { "Ref": "ConfluenceInstallerScriptUrl" },
+          "ConfluenceInstallerScriptUrl": {
+            "Ref": "ConfluenceInstallerScriptUrl"
+          },
           "ConfluenceOsPrepUrl": { "Ref": "ConfluenceOsPrepUrl" },
           "ConfluenceProxyFqdn": { "Ref": "ConfluenceProxyFqdn" },
           "ConfluenceSharePath": {
@@ -505,16 +555,43 @@
       },
       "Type": "AWS::CloudFormation::Stack"
     },
+    "ElbRes": {
+      "Properties": {
+        "Parameters": {
+          "ConfluenceListenerCert": { "Ref": "ConfluenceListenerCert" },
+          "ConfluenceListenPort": { "Ref": "ConfluenceListenPort" },
+          "ConfluenceServicePort": { "Ref": "ConfluenceServicePort" },
+          "HaSubnets": {
+            "Fn::Join": [
+              ",",
+              { "Ref": "PubElbSubnets" }
+            ]
+          },
+          "ConfluenceInstanceId": {
+            "Fn::GetAtt": [ "Ec2Res", "Outputs.ConfluenceInstanceId" ]
+          },
+          "ProxyPrettyName": { "Ref": "ProxyPrettyName" },
+          "SecurityGroupIds": {
+            "Fn::Join": [
+              ",",
+              [
+                { "Fn::GetAtt": [ "SgRes", "Outputs.AppSg" ] }
+              ]
+            ]
+          },
+          "TargetVPC": { "Ref": "TargetVPC" }
+        },
+        "TemplateURL": {
+          "Ref": "ElbTemplateUri"
+        }
+      },
+      "Type": "AWS::CloudFormation::Stack"
+    },
     "EfsRes": {
       "DependsOn": "SgRes",
       "Properties": {
         "Parameters": {
-          "EfsSg": {
-            "Fn::GetAtt": [
-              "SgRes",
-              "Outputs.NasSg"
-            ]
-          },
+          "EfsSg": { "Fn::GetAtt": [ "SgRes", "Outputs.NasSg" ] },
           "EfsSubnet": {
             "Fn::Join": [
               ",",
