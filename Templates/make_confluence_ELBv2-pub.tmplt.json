@@ -42,7 +42,7 @@
       "Type": "Number"
     },
     "ConfluenceServicePort": {
-      "Default": "80",
+      "Default": "8090",
       "Description": "TCP Port number that the Confluence host listens to.",
       "MaxValue": "65535",
       "Type": "Number"
