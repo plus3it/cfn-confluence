@@ -442,10 +442,6 @@
       "Description": "Prefix to apply to IAM role to make things a bit prettier (optional).",
       "Type": "String"
     },
-    "SecurityGroupIds": {
-      "Description": "List of security groups to apply to the ELB.",
-      "Type": "List<AWS::EC2::SecurityGroup::Id>"
-    },
     "ServiceTld": {
       "Default": "amazonaws.com",
       "Description": "TLD of the IAMable service-name.",
