@@ -78,7 +78,7 @@
               [
                 "HTTP:",
                 { "Ref": "ConfluenceServicePort" },
-                "/secure/Dashboard.jspa"
+                "/login.action"
               ]
             ]
           },
