@@ -15,7 +15,7 @@
             "BucketTemplateUri",
             "IamTemplateUri",
             "Ec2TemplateUri",
-            "ELbTemplateUri"
+            "ElbTemplateUri"
           ]
         },
         {
@@ -311,7 +311,7 @@
       "Description": "URI for the template that creates Confluence's EFS shares.",
       "Type": "String"
     },
-    "ELbTemplateUri": {
+    "ElbTemplateUri": {
       "AllowedPattern": "^$|^http://.*$|^https://.*$",
       "Description": "URI for the template that creates ELB proxy providing client-access to the Confluence Application.",
       "Type": "String"
