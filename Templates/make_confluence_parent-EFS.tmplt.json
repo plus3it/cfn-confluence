@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "This template coordinates the running of the Confluence Security-group, EFS, RDS, S3, IAM and EC2 templates.",
+  "Description": "This template coordinates the running of the Confluence Security-group, EFS, RDS, S3, IAM, EC2 and ELB templates.",
   "Metadata": {
     "AWS::CloudFormation::Interface": {
       "ParameterGroups": [
@@ -501,8 +501,8 @@
               ]
             ]
           },
-          "ConfluenceInstallBinUrl": { "Ref": "ConfluenceInstallBinUrl" },
-          "ConfluenceInstallerScriptUrl": {
+          "ConfluenceBinaryInstallerUrl": { "Ref": "ConfluenceInstallBinUrl" },
+          "ConfluenceAppPrepUrl": {
             "Ref": "ConfluenceInstallerScriptUrl"
           },
           "ConfluenceOsPrepUrl": { "Ref": "ConfluenceOsPrepUrl" },
@@ -532,7 +532,7 @@
           "PrivateIp": { "Ref": "PrivateIp" },
           "ProvisionUser": { "Ref": "ProvisionUser" },
           "PyStache": { "Ref": "PyStache" },
-          "PypiIndexUrl": { "Ref": "PypiIndexUrl" },
+          "PipIndexFips": { "Ref": "PypiIndexUrl" },
           "SecurityGroupIds": {
             "Fn::Join": [
               ",",
