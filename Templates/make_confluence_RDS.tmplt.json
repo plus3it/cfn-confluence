@@ -5,7 +5,7 @@
       "Fn::Not": [ { "Fn::Equals": [ { "Ref": "DbNodeName" }, "" ] } ]
     }
   },
-  "Description": "This template deployes a small, single-AZ PGSQL database to support Confluence.",
+  "Description": "This template deployes a small, single- or multi-AZ PGSQL database to support Confluence.",
   "Mappings": {},
   "Metadata": {
     "AWS::CloudFormation::Interface": {
