@@ -5,6 +5,12 @@
 # shellcheck disable=SC2086
 PROGNAME="$(basename ${0})"
 SELMODE="$(awk -F= '/^SELINUX=/{print $2}' /etc/selinux/config)"
+# Ensure we'v got our CFn envs (in case invoking via other than CFn)
+while read -r ENV
+do
+  # shellcheck disable=SC2163
+  export "${ENV}"
+done < /etc/cfn/Confluence.envs
 BINSTALL=/root/atlassian-confluence-installer_x64.bin
 RESPFILE=/root/response.varfile
 SHARESRVR="${CONFLUENCE_SHARE_SERVER:-UNDEF}"
