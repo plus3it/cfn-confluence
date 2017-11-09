@@ -184,4 +184,12 @@ umount "${SHARESRVR}":/ 2> /dev/null || \
 grep "${SHARESRVR}" /proc/mounts >> /etc/fstab || \
   err_exit 'Failed to update /etc/fstab'
 
+# Enable Confluence systemd service (as necessary)
+if [[ $(systemctl is-enabled confluence) == disabled ]]
+then
+    printf 'Enabling Confluence systemd service... '
+    systemctl --quiet enable confluence && echo "Success" || \
+      err_exit 'Failed to enable Confluence systemd service'
+fi
+
 setenforce ${SELMODE}
