@@ -11,9 +11,9 @@
         { "Fn::Equals": [ { "Ref": "NoPublicIp" }, "true" ] }
       ]
     },
-    "CreateBackupVolume": {
+    "CreateAppVolume": {
       "Fn::Not": [
-        { "Fn::Equals": [ { "Ref": "BackupVolumeDevice" }, "" ] }
+        { "Fn::Equals": [ { "Ref": "AppVolumeDevice" }, "" ] }
       ]
     },
     "Reboot": {
@@ -129,14 +129,14 @@
       "Description": "(Optional) URL to the CloudFormation Endpoint. e.g. https://cloudformation.us-east-1.amazonaws.com",
       "Type": "String"
     },
-    "ConfluenceInstallBinUrl": {
-      "AllowedPattern": "^$|^http://.*$|^https://.*$",
-      "Description": "URL to Confluence installer-bin.",
-      "Type": "String"
-    },
-    "ConfluenceInstallerScriptUrl": {
+    "ConfluenceAppPrepUrl": {
       "AllowedPattern": "^$|^http://.*$|^https://.*$",
       "Description": "URL to script that installs Confluence to the EC2 instance.",
+      "Type": "String"
+    },
+    "ConfluenceBinaryInstallerUrl": {
+      "AllowedPattern": "^$|^http://.*$|^https://.*$",
+      "Description": "URL to Confluence installer-bin.",
       "Type": "String"
     },
     "ConfluenceOsPrepUrl": {
@@ -267,7 +267,7 @@
       "Description": "Name of preferred pystache RPM.",
       "Type": "String"
     },
-    "PypiIndexUrl": {
+    "PipIndexFips": {
       "AllowedPattern": "^http[s]?://.*$",
       "Default": "https://pypi.org/simple",
       "Description": "URL to the PyPi Index",
@@ -500,10 +500,10 @@
                        { "Ref": "ConfluenceProxyFqdn" },
                        "\n",
                       "CONFLUENCE_INSTALLBIN_URL=",
-                       { "Ref": "ConfluenceInstallBinUrl" },
+                       { "Ref": "ConfluenceBinaryInstallerUrl" },
                        "\n",
                       "CONFLUENCE_INSTALLSCRIPT_URL=",
-                       { "Ref": "ConfluenceInstallerScriptUrl" },
+                       { "Ref": "ConfluenceAppPrepUrl" },
                        "\n",
                       "CONFLUENCE_DB_HOST_FQDN=",
                        { "Ref": "DbFqdn" },
@@ -781,13 +781,13 @@
           },
           {
             "Fn::If": [
-              "CreateBackupVolume",
+              "CreateAppVolume",
               {
-                "DeviceName": { "Ref": "BackupVolumeDevice" },
+                "DeviceName": { "Ref": "AppVolumeDevice" },
                 "Ebs": {
                   "DeleteOnTermination": "true",
-                  "VolumeSize": { "Ref": "BackupVolumeSize" },
-                  "VolumeType": { "Ref": "BackupVolumeType" }
+                  "VolumeSize": { "Ref": "AppVolumeSize" },
+                  "VolumeType": { "Ref": "AppVolumeType" }
                 }
               },
               { "Ref": "AWS::NoValue" }
@@ -855,23 +855,23 @@
                 "\n",
                 {
                   "Fn::If": [
-                    "CreateBackupVolume",
+                    "CreateAppVolume",
                     {
                       "Fn::Join": [
                         "",
                         [
                           "bootcmd:\n",
                           "  - cloud-init-per instance mkfs-bkupvolume mkfs -t ext4 ",
-                          { "Ref": "BackupVolumeDevice" },
+                          { "Ref": "AppVolumeDevice" },
                           "\n",
                           "\n",
                           "mounts:\n",
                           "  - [ ",
                           "\"",
-                          { "Ref": "BackupVolumeDevice" },
+                          { "Ref": "AppVolumeDevice" },
                           "\", ",
                           "\"",
-                          { "Ref": "BackupVolumeMountPath" },
+                          { "Ref": "AppVolumeMountPath" },
                           "\", ",
                           "\"auto\" ",
                           "]\n"
