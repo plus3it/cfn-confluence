@@ -167,6 +167,7 @@
     },
     "DbAdminPass": {
       "Description": "Password of the Confluence master database-user.",
+      "NoEcho": "True",
       "Type": "String"
     },
     "DbFqdn": {
