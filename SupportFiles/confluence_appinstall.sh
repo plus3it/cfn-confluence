@@ -137,7 +137,7 @@ then
    done
 
    # Make sure Confluence doesn't complain about being behind an ELB
-   if [[ ${PROXY} = UNDEF ]]
+   if [[ ${PROXYFQDN} = UNDEF ]]
    then
       echo "No proxy-host passed to install-wrapper."
    elif [[ -e ${SERVERXML} ]]
