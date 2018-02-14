@@ -123,6 +123,10 @@
       "Description": "Type of EBS volume to create. Ignored if \"AppVolumeDevice\" is blank",
       "Type": "String"
     },
+    "BackupBucket": {
+      "Description": "S3 Bucket to host backups of Confluence-hosted data",
+      "Type": "String"
+    },
     "CfnEndpointUrl": {
       "AllowedPattern": "^$|^http[s]?://.*$",
       "Default": "https://cloudformation.us-east-1.amazonaws.com",
@@ -318,13 +322,13 @@
         "AWS::CloudFormation::Init": {
           "admkey-install": {
             "files": {
-              "/tmp/adminkeys.pub": {
+              "/etc/cfn/files/adminkeys.pub": {
                 "source": { "Ref": "AdminPubkeyURL" },
                 "group": "root",
                 "mode": "000600",
                 "owner": "root"
               },
-              "/tmp/admkey.sh": {
+              "/etc/cfn/scripts/admkey.sh": {
                 "content": {
                   "Fn::Join": [
                     "",
@@ -338,7 +342,7 @@
                       { "Ref": "ProvisionUser" },
                       " -g ",
                       { "Ref": "ProvisionUser" },
-                      " /tmp/adminkeys.pub ${PROVHOME}/.ssh/authorized_keys\n",
+                      " /etc/cfn/files/adminkeys.pub ${PROVHOME}/.ssh/authorized_keys\n",
                       "\n"
                     ]
                   ]
@@ -350,7 +354,7 @@
             },
             "commands": {
               "1-admkey-install": {
-                "command": "bash -xe /tmp/admkey.sh"
+                "command": "bash -xe /etc/cfn/scripts/admkey.sh"
               }
             }
           },
@@ -396,13 +400,16 @@
             "launch": [
               "setup",
               "admkey-install",
-              "osprep-launch",
               "watchmaker-install",
               "watchmaker-launch",
+              "osprep-launch",
               {
                 "Fn::If": [
                   "UseCfnAppInstaller",
-                  "app-install",
+                  [
+                    "cron-setup",
+                    "app-install"
+                  ],
                   { "Ref": "AWS::NoValue" }
                 ]
               },
@@ -415,6 +422,63 @@
                 ]
               }
             ]
+          },
+          "cron-setup": {
+            "files": {
+              "/usr/local/sbin/SweepToS3.sh": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "#!/bin/bash\n",
+                      "#\n",
+                      "# Script to sweep app-originated disk-backups to S3\n",
+                      "BACKUPSRC=",
+                        "/var/atlassian/application-data/confluence/backups",
+                        "\n",
+                      "BACKUPBKT=",
+                        { "Ref": "BackupBucket" },
+                        "\n",
+                      "BACKUPDIR=Backups\n",
+                      "DEBUG=${DEBUG:-0}\n",
+                      "\n",
+                      "for ARCHIVE in ${BACKUPSRC}/*.zip\n",
+                      "do\n",
+                      "   if [[ ${DEBUG} == 0 ]]\n",
+                      "   then\n",
+                      "      aws s3 mv --quiet ${ARCHIVE}",
+                              " s3://${BACKUPBKT}/${BACKUPDIR}/ || \\ \n",
+                      "        echo \"Error while moving ${ARCHIVE} to",
+                               " s3://${BACKUPBKT}/${BACKUPDIR}/\"\n",
+                      "   else\n",
+                      "      printf \"Moving %s to s3://%s... \" ",
+                              "\"${ARCHIVE}\" \"${BACKUPBKT}\"\n",
+                      "      aws s3 mv --quiet ${ARCHIVE}",
+                              " s3://${BACKUPBKT}/${BACKUPDIR}/ && \\ \n",
+                      "        echo \"Success\" || echo \"Failed\"\n",
+                      "   fi\n",
+                      "done\n"
+                    ]
+                  ]
+                },
+                "group": "root",
+                "mode": "000700",
+                "owner": "root"
+              },
+              "/etc/cron.d/ConfluenceBkup": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "30 12 * * * confluence /usr/local/sbin/SweepToS3.sh\n"
+                    ]
+                  ]
+                },
+                "group": "root",
+                "mode": "000700",
+                "owner": "root"
+              }
+            }
           },
           "finalize": {
             "commands": {
@@ -476,7 +540,10 @@
           },
           "reboot": {
             "commands": {
-              "10-reboot": {
+              "1-stop-confluence": {
+                "command": "systemctl stop confluence"
+              },
+              "9-reboot": {
                 "command": "shutdown -r +1 &"
               }
             }
@@ -622,13 +689,13 @@
                 "mode": "000700",
                 "owner": "root"
               },
-              "/tmp/adminkeys.pub": {
+              "/etc/cfn/files/adminkeys.pub": {
                 "group": "root",
                 "mode": "000600",
                 "owner": "root",
                 "source": { "Ref": "AdminPubkeyURL" }
               },
-              "/tmp/admkey.sh": {
+              "/etc/cfn/scripts/admkey.sh": {
                 "content": {
                   "Fn::Join": [
                     "",
@@ -642,7 +709,7 @@
                       { "Ref": "ProvisionUser" },
                       " -g ",
                       { "Ref": "ProvisionUser" },
-                      " /tmp/adminkeys.pub ${PROVHOME}/.ssh/authorized_keys\n",
+                      " /etc/cfn/files/adminkeys.pub ${PROVHOME}/.ssh/authorized_keys\n",
                       "\n"
                     ]
                   ]
