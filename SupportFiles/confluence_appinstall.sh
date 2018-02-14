@@ -41,11 +41,12 @@ function err_exit {
 function MkPersistDir {
    local NEWDIR="${1}"
 
-   if [[ -d ${NEWDIR} ]]
+   if [[ -d /mnt/${NEWDIR} ]]
    then
       err_exit "Found ${NEWDIR} where none should have existed"
    else
-      install -d -m 755 /mnt/${NEWDIR} || \
+      printf "Creating /mnt/%s..." "${NEWDIR}"
+      install -d -m 755 /mnt/${NEWDIR} && echo "Success" || \
         err_exit "Failed to create ${SHARESRVR}:/${NEWDIR}"
    fi
 }
@@ -89,8 +90,10 @@ function CleanDummy {
 
 ##
 ## Main script logic
-setenforce 0
 
+# Soften some stuff so installer works as expected
+setenforce 0
+umask 000022
 
 # Make ready for unattended install
 cat > "${RESPFILE}" << EOF
@@ -124,10 +127,17 @@ then
    service confluence stop && echo 'Success' || \
      err_exit 'Failed to stop Confluence'
 
-   echo "Relocating to persistent storage..."
-   mv /opt/atlassian /mnt/opt_atlassian || \
+   echo "Ensuring relocation-targets exist"
+   for DIR in opt_atlassian var_atlassian
+   do
+      MkPersistDir "${DIR}"
+   done
+
+   echo "Relocating opt-data to persistent storage..."
+   cd /opt/atlassian && tar cf - . | ( cd /mnt/opt_atlassian && tar xf -) || \
      err_exit 'Failed to re-home /opt/atlassian to persistent storage'
-   mv /var/atlassian /mnt/var_atlassian || \
+   echo "Relocating var-data to persistent storage..."
+   cd /var/atlassian && tar cf - . | ( cd /mnt/var_atlassian && tar xf -) || \
      err_exit 'Failed to re-home /var/atlassian to persistent storage'
 
    # Create and mount persistent-content dirs
@@ -137,7 +147,7 @@ then
    done
 
    # Make sure Confluence doesn't complain about being behind an ELB
-   if [[ ${PROXYFQDN} = UNDEF ]]
+   if [[ ${PROXY} = UNDEF ]]
    then
       echo "No proxy-host passed to install-wrapper."
    elif [[ -e ${SERVERXML} ]]
@@ -183,6 +193,12 @@ umount "${SHARESRVR}":/ 2> /dev/null || \
 
 grep "${SHARESRVR}" /proc/mounts >> /etc/fstab || \
   err_exit 'Failed to update /etc/fstab'
+
+# Make sure no conflict between local and remote dev
+if [[ $( grep -qE "^/dev.*atlassian" /proc/mounts ) -eq 0 ]]
+then
+   sed -i '/^\/dev\/.*atlassian/d' /etc/fstab
+fi
 
 # Enable Confluence systemd service (as necessary)
 if [[ $(systemctl is-enabled confluence) == disabled ]]
