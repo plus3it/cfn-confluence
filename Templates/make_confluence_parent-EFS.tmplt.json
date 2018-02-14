@@ -492,6 +492,7 @@
           "AppVolumeMountPath": { "Ref": "AppVolumeMountPath" },
           "AppVolumeSize": { "Ref": "AppVolumeSize" },
           "AppVolumeType": { "Ref": "AppVolumeType" },
+          "BackupBucket": { "Fn::GetAtt": [ "S3Res", "Outputs.BackupBucket" ] },
           "CfnEndpointUrl": {
             "Fn::Join": [
               ".",
