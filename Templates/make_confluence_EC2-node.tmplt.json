@@ -386,7 +386,9 @@
                       "ExecStartPre=/bin/sleep 15\n",
                       "ExecStart=/opt/atlassian/confluence/bin/start-confluence.sh\n",
                       "ExecStop=/opt/atlassian/confluence/bin/stop-confluence.sh\n",
-                      "ExecReload=/opt/atlassian/confluence/bin/confluence.sh | sleep 60 | /opt/atlassian/confluence/bin/confluence.sh\n",
+                      "ExecReload=/opt/atlassian/confluence/bin/stop-confluence.sh | sleep 60 | /opt/atlassian/confluence/bin/start-confluence.sh\n",
+                      "Restart=always\n",
+                      "RestartSec=15\n",
                       "\n",
                       "[Install]\n",
                       "WantedBy=multi-user.target\n"
@@ -475,7 +477,7 @@
                   ]
                 },
                 "group": "root",
-                "mode": "000700",
+                "mode": "000644",
                 "owner": "root"
               }
             }
