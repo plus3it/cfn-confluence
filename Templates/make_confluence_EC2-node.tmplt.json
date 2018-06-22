@@ -545,6 +545,12 @@
               "1-stop-confluence": {
                 "command": "systemctl stop confluence"
               },
+              "2-stop-with-extreme-prejudice": {
+                "command": "pkill -9 java"
+              },
+              "3-stop-mounts": {
+                "command": "for MNT in $( df -t nfs4 --output=target | grep ^/ ); do umount -l --force $MNT; done"
+              },
               "9-reboot": {
                 "command": "shutdown -r +1 &"
               }
