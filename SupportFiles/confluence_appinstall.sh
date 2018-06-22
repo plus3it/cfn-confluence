@@ -1,5 +1,5 @@
 #!/bin/bash
-# shellcheck disable=SC2115,SC2155,SC2015,SC2034
+# shellcheck disable=SC2115,SC2155,SC2015,SC2034,SC2004
 #
 #################################################################
 # shellcheck disable=SC2086
@@ -87,6 +87,27 @@ function CleanDummy {
      err_exit "Failed to remove all files from ${DUMMYDIR}"
 }
 
+##
+## Memory-align the JVM settings
+function TuneJvm {
+  local ENVFILE=/opt/atlassian/confluence/bin/setenv.sh
+  local SYSMEM=$(awk '/^MemTotal/{ print int( $2 / 1024 )}' /proc/meminfo)
+
+  if [[ ${SYSMEM} -ge 4096 ]]
+  then
+     APPMEM=$(( $SYSMEM * 66 / 100 ))
+  elif [[ ${SYSMEM} -lt 4096 ]] && [[ ${SYSMEM} -gt 2048 ]]
+  then
+     APPMEM=$(( $SYSMEM * 50 / 100 ))
+  else
+     APPMEM=1024
+  fi
+
+  sed -i -e '/^CATALINA_OPTS=.*Xmx/s/Xmx[0-9]*m/Xmx'${APPMEM}'m/' \
+    -e '/^CATALINA_OPTS=.*Xms/s/Xms[0-9]*m/Xms'${APPMEM}'m/' \
+    "${ENVFILE}"
+}
+
 
 ##
 ## Main script logic
@@ -163,6 +184,10 @@ then
    fi
 
    printf 'Attempting post-reconfiguration restart of Confluence... '
+
+   # Align memory to instance-size
+   TuneJvm
+
    service confluence start && echo 'Success' || \
      err_exit 'Failed to restart Confluence'
 
@@ -184,6 +209,10 @@ else
       CleanDummy "${DIR}"
       MtPersistDir "${DIR}"
    done
+
+   # Align memory to instance-size
+   TuneJvm
+
    service confluence start || \
      err_exit 'Failed to start re-deployed Confluence application'
 fi
