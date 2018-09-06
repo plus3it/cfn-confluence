@@ -210,10 +210,18 @@
         "t2.small",
         "t2.medium",
         "t2.large",
+        "t3.micro",
+        "t3.small",
+        "t3.medium",
+        "t3.large",
         "c4.large",
         "c4.xlarge",
         "m4.large",
         "m4.xlarge"
+        "m5.large"
+        "m5.xlarge"
+        "m5d.large"
+        "m5d.xlarge"
       ],
       "Default": "t2.micro",
       "Description": "Amazon EC2 instance type",
