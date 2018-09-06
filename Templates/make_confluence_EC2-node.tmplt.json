@@ -213,7 +213,7 @@
         "c4.large",
         "c4.xlarge",
         "m4.large",
-        "m4.xlarge",
+        "m4.xlarge"
       ],
       "Default": "t2.micro",
       "Description": "Amazon EC2 instance type",
