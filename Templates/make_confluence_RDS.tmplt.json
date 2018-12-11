@@ -3,6 +3,22 @@
   "Conditions": {
     "SetNodeName": {
       "Fn::Not": [ { "Fn::Equals": [ { "Ref": "DbNodeName" }, "" ] } ]
+    },
+    "UsePgSqlMinor": {
+      "Fn::Equals": [
+        {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::Split": [
+                ".",
+                { "Ref": "PgsqlVersion" }
+              ]
+            }
+          ]
+        },
+        "9"
+      ]
     }
   },
   "Description": "This template deployes a small, single- or multi-AZ PGSQL database to support Confluence.",
@@ -75,14 +91,20 @@
         "db.m4.xlarge",
         "db.m4.2xlarge",
         "db.m4.4xlarge",
-        "db.m4.10xlarge",
+        "db.m5.large",
+        "db.m5.xlarge",
+        "db.m5.2xlarge",
+        "db.m5.4xlarge",
         "db.r3.large",
         "db.r3.xlarge",
         "db.r3.2xlarge",
         "db.r3.4xlarge",
-        "db.r3.8xlarge"
+        "db.r4.large",
+        "db.r4.xlarge",
+        "db.r4.2xlarge",
+        "db.r4.4xlarge"
       ],
-      "Default": "db.t2.small",
+      "Default": "db.m5.large",
       "Description": "Amazon RDS instance type",
       "Type": "String"
     },
@@ -109,14 +131,19 @@
     },
     "PgsqlVersion": {
       "AllowedValues": [
+        "10.4",
         "10.3",
         "10.1",
+        "9.6.10",
+        "9.6.9",
         "9.6.8",
         "9.6.6",
         "9.6.5",
         "9.6.3",
         "9.6.2",
         "9.6.1",
+        "9.5.14",
+        "9.5.13",
         "9.5.12",
         "9.5.10",
         "9.5.9",
@@ -125,7 +152,7 @@
         "9.5.4",
         "9.5.2"
       ],
-      "Default": "9.5.12",
+      "Default": "9.5.14",
       "Description": "The X.Y.Z version of the PostGreSQL database to deploy.",
       "Type": "String"
     },
@@ -170,7 +197,7 @@
     "RDSdbParmGrp": {
       "Properties" : {
         "Description" : "Parameters used to modify database behavior and performance characteristics",
-        "Family" : {
+        "Family": {
           "Fn::Join": [
             "",
             [
@@ -186,16 +213,29 @@
                   }
                 ]
               },
-              ".",
               {
-                "Fn::Select": [
-                  "1",
+                "Fn::If": [
+                  "UsePgSqlMinor",
                   {
-                    "Fn::Split": [
-                      ".",
-                      { "Ref": "PgsqlVersion" }
+                    "Fn::Join": [
+                      "",
+                      [
+                        ".",
+                        {
+                          "Fn::Select": [
+                            "1",
+                            {
+                              "Fn::Split": [
+                                ".",
+                                { "Ref": "PgsqlVersion" }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
                     ]
-                  }
+                  },
+                  { "Ref": "AWS::NoValue" }
                 ]
               }
             ]
