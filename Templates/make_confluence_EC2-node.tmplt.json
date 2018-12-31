@@ -42,19 +42,7 @@
     }
   },
   "Description": "This template deploys a STIG-hardened Enterprise Linux 7 instance to host the Confluence service.",
-  "Mappings": {
-    "Distro2RootDevice": {
-      "AmazonLinux": {
-        "DeviceName": "xvda"
-      },
-      "CentOS": {
-        "DeviceName": "sda1"
-      },
-      "RedHat": {
-        "DeviceName": "sda1"
-      }
-    }
-  },
+  "Mappings": {},
   "Metadata": {
     "AWS::CloudFormation::Interface": {}
   },
@@ -70,19 +58,10 @@
       "Description": "URL the file containing the admin group's SSH public keys.",
       "Type": "String"
     },
-    "AmiDistro": {
-      "AllowedValues": [
-        "CentOS",
-        "RedHat"
-      ],
-      "Default": "CentOS",
-      "Description": "Linux distro of the AMI",
-      "Type": "String"
-    },
     "AmiId": {
       "AllowedPattern": "^ami-[0-9a-z]{8}$|^ami-[0-9a-z]{17}$",
       "Description": "ID of the AMI to launch",
-      "Type": "String"
+      "Type": "AWS::EC2::Image::Id"
     },
     "AppVolumeDevice": {
       "AllowedValues": [
@@ -241,23 +220,9 @@
       "Description": "Controls whether to reboot the instance as the last step of cfn-init execution",
       "Type": "String"
     },
-    "NoUpdates": {
-      "AllowedValues": [
-        "false",
-        "true"
-      ],
-      "Default": "false",
-      "Description": "Controls whether to run yum update during a stack update (on the initial instance launch, Watchmaker _always_ installs updates)",
-      "Type": "String"
-    },
     "PipRpm": {
       "Default": "python2-pip",
       "Description": "Name of preferred pip RPM.",
-      "Type": "String"
-    },
-    "PrivateIp": {
-      "Default": "",
-      "Description": "(Optional) Set a static, primary private IP. Leave blank to auto-select a free IP",
       "Type": "String"
     },
     "ProvisionUser": {
@@ -851,7 +816,7 @@
           {
             "DeviceName": "/dev/sda1",
             "Ebs": {
-              "DeleteOnTermination": "true",
+              "DeleteOnTermination": true,
               "VolumeType": "gp2"
             }
           },
@@ -861,7 +826,7 @@
               {
                 "DeviceName": { "Ref": "AppVolumeDevice" },
                 "Ebs": {
-                  "DeleteOnTermination": "true",
+                  "DeleteOnTermination": true,
                   "VolumeSize": { "Ref": "AppVolumeSize" },
                   "VolumeType": { "Ref": "AppVolumeType" }
                 }
@@ -885,8 +850,8 @@
             "AssociatePublicIpAddress": {
               "Fn::If": [
                 "AssignPublicIp",
-                "true",
-                "false"
+                true,
+                false
               ]
             },
             "DeviceIndex": "0",

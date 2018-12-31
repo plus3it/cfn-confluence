@@ -123,7 +123,7 @@
     "ConfluencePubAlbTgroup": {
       "Properties": {
         "HealthCheckPath": "/login.action",
-        "HealthyThresholdCount": "5",
+        "HealthyThresholdCount": 5,
         "Name": {
           "Fn::Join": [
             "-",
@@ -153,7 +153,7 @@
             "Port": { "Ref": "ConfluenceServicePort" }
           }
         ],
-        "UnhealthyThresholdCount": "2",
+        "UnhealthyThresholdCount": 2,
         "VpcId": { "Ref": "TargetVPC" }
       },
       "Type" : "AWS::ElasticLoadBalancingV2::TargetGroup"
