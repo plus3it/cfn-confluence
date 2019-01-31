@@ -648,8 +648,7 @@
               { "Ref": "HaSubnets" }
             ]
           },
-          "PgsqlVersion": { "Ref": "PgsqlVersion" },
-          "TargetVPC": { "Ref": "TargetVPC" }
+          "PgsqlVersion": { "Ref": "PgsqlVersion" }
         },
         "TemplateURL": { "Ref": "RdsTemplateUri" }
       },
