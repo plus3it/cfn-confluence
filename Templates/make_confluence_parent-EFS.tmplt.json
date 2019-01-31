@@ -504,7 +504,6 @@
       "Properties": {
         "Parameters": {
           "AdminPubkeyURL": { "Ref": "AdminPubkeyURL" },
-          "AmiDistro": { "Ref": "AmiDistro" },
           "AmiId": { "Ref": "AmiId" },
           "AppVolumeDevice": { "Ref": "AppVolumeDevice" },
           "AppVolumeMountPath": { "Ref": "AppVolumeMountPath" },
@@ -547,9 +546,7 @@
           "KeyPairName": { "Ref": "KeyPairName" },
           "NoPublicIp": { "Ref": "NoPublicIp" },
           "NoReboot": { "Ref": "NoReboot" },
-          "NoUpdates": { "Ref": "NoUpdates" },
           "PipRpm": { "Ref": "PipRpm" },
-          "PrivateIp": { "Ref": "PrivateIp" },
           "ProvisionUser": { "Ref": "ProvisionUser" },
           "PyStache": { "Ref": "PyStache" },
           "PipIndexFips": { "Ref": "PypiIndexUrl" },
