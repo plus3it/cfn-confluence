@@ -24,7 +24,6 @@
           },
           "Parameters": [
             "AmiId",
-            "AmiDistro",
             "InstanceType",
             "ProvisionUser",
             "KeyPairName",
@@ -32,11 +31,9 @@
             "Hostname",
             "Domainname",
             "SubnetId",
-            "PrivateIp",
             "RolePrefix",
             "NoPublicIp",
-            "NoReboot",
-            "NoUpdates"
+            "NoReboot"
           ]
         },
         {
@@ -372,15 +369,6 @@
       "Description": "Controls whether to reboot the instance as the last step of cfn-init execution",
       "Type": "String"
     },
-    "NoUpdates": {
-      "AllowedValues": [
-        "false",
-        "true"
-      ],
-      "Default": "false",
-      "Description": "Controls whether to run yum update during a stack update (on the initial instance launch, Watchmaker _always_ installs updates)",
-      "Type": "String"
-    },
     "PgsqlVersion": {
       "AllowedValues": [
         "10.4",
@@ -411,11 +399,6 @@
     "PipRpm": {
       "Default": "python2-pip",
       "Description": "Name of preferred pip RPM.",
-      "Type": "String"
-    },
-    "PrivateIp": {
-      "Default": "",
-      "Description": "(Optional) Set a static, primary private IP. Leave blank to auto-select a free IP",
       "Type": "String"
     },
     "ProvisionUser": {
