@@ -144,15 +144,6 @@
       "Description": "URL the file containing the admin users' SSH public keys.",
       "Type": "String"
     },
-    "AmiDistro": {
-      "AllowedValues": [
-        "CentOS",
-        "RedHat"
-      ],
-      "Default": "CentOS",
-      "Description": "Linux (Enterprise Linux Compatible) distro of the AMI ",
-      "Type": "String"
-    },
     "AmiId": {
       "AllowedPattern": "^ami-[0-9a-z]{8}$|^ami-[0-9a-z]{17}$",
       "Description": "ID of the AMI to launch",
