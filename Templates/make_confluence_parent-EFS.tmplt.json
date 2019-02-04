@@ -24,7 +24,6 @@
           },
           "Parameters": [
             "AmiId",
-            "AmiDistro",
             "InstanceType",
             "ProvisionUser",
             "KeyPairName",
@@ -32,11 +31,9 @@
             "Hostname",
             "Domainname",
             "SubnetId",
-            "PrivateIp",
             "RolePrefix",
             "NoPublicIp",
-            "NoReboot",
-            "NoUpdates"
+            "NoReboot"
           ]
         },
         {
@@ -142,15 +139,6 @@
     "AdminPubkeyURL": {
       "AllowedPattern": "^$|^http://.*$|^https://.*$",
       "Description": "URL the file containing the admin users' SSH public keys.",
-      "Type": "String"
-    },
-    "AmiDistro": {
-      "AllowedValues": [
-        "CentOS",
-        "RedHat"
-      ],
-      "Default": "CentOS",
-      "Description": "Linux (Enterprise Linux Compatible) distro of the AMI ",
       "Type": "String"
     },
     "AmiId": {
@@ -381,15 +369,6 @@
       "Description": "Controls whether to reboot the instance as the last step of cfn-init execution",
       "Type": "String"
     },
-    "NoUpdates": {
-      "AllowedValues": [
-        "false",
-        "true"
-      ],
-      "Default": "false",
-      "Description": "Controls whether to run yum update during a stack update (on the initial instance launch, Watchmaker _always_ installs updates)",
-      "Type": "String"
-    },
     "PgsqlVersion": {
       "AllowedValues": [
         "10.4",
@@ -420,11 +399,6 @@
     "PipRpm": {
       "Default": "python2-pip",
       "Description": "Name of preferred pip RPM.",
-      "Type": "String"
-    },
-    "PrivateIp": {
-      "Default": "",
-      "Description": "(Optional) Set a static, primary private IP. Leave blank to auto-select a free IP",
       "Type": "String"
     },
     "ProvisionUser": {
@@ -504,7 +478,6 @@
       "Properties": {
         "Parameters": {
           "AdminPubkeyURL": { "Ref": "AdminPubkeyURL" },
-          "AmiDistro": { "Ref": "AmiDistro" },
           "AmiId": { "Ref": "AmiId" },
           "AppVolumeDevice": { "Ref": "AppVolumeDevice" },
           "AppVolumeMountPath": { "Ref": "AppVolumeMountPath" },
@@ -547,9 +520,7 @@
           "KeyPairName": { "Ref": "KeyPairName" },
           "NoPublicIp": { "Ref": "NoPublicIp" },
           "NoReboot": { "Ref": "NoReboot" },
-          "NoUpdates": { "Ref": "NoUpdates" },
           "PipRpm": { "Ref": "PipRpm" },
-          "PrivateIp": { "Ref": "PrivateIp" },
           "ProvisionUser": { "Ref": "ProvisionUser" },
           "PyStache": { "Ref": "PyStache" },
           "PipIndexFips": { "Ref": "PypiIndexUrl" },
@@ -648,8 +619,7 @@
               { "Ref": "HaSubnets" }
             ]
           },
-          "PgsqlVersion": { "Ref": "PgsqlVersion" },
-          "TargetVPC": { "Ref": "TargetVPC" }
+          "PgsqlVersion": { "Ref": "PgsqlVersion" }
         },
         "TemplateURL": { "Ref": "RdsTemplateUri" }
       },
