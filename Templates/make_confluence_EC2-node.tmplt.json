@@ -902,7 +902,7 @@
                         "",
                         [
                           "bootcmd:\n",
-                          "  - cloud-init-per instance mkfs-bkupvolume mkfs -t ext4 ",
+                          "  - cloud-init-per instance bkvolume mkfs -t ext4 ",
                           { "Ref": "AppVolumeDevice" },
                           "\n",
                           "\n",
