@@ -21,6 +21,11 @@
         { "Fn::Equals": [ { "Ref": "NoReboot" }, "true" ] }
       ]
     },
+    "UseAdminPubkeyURL": {
+      "Fn::Not": [
+        { "Fn::Equals": [ { "Ref": "AdminPubkeyURL" }, "" ] }
+      ]
+    },
     "UseCfnAppInstaller": {
       "Fn::Not": [
         { "Fn::Equals": [ { "Ref": "ConfluenceAppPrepUrl" }, "" ] }
@@ -33,6 +38,11 @@
     "UseEnvironment": {
       "Fn::Not": [
         { "Fn::Equals": [ { "Ref": "WatchmakerEnvironment" }, "" ] }
+      ]
+    },
+    "UseKeyPair": {
+      "Fn::Not": [
+        { "Fn::Equals": [ { "Ref": "KeyPairName" }, "" ] }
       ]
     },
     "UseWamConfig": {
@@ -200,7 +210,7 @@
     },
     "KeyPairName": {
       "Description": "Public/private key pairs allow you to securely connect to your instance after it launches",
-      "Type": "AWS::EC2::KeyPair::KeyName"
+      "Type": "String"
     },
     "NoPublicIp": {
       "AllowedValues": [
@@ -366,7 +376,13 @@
           "configSets": {
             "launch": [
               "setup",
-              "admkey-install",
+              {
+                "Fn::If": [
+                  "UseAdminPubkeyURL",
+                  "admkey-install",
+                  { "Ref": "AWS::NoValue" }
+                ]
+              },
               "watchmaker-install",
               "watchmaker-launch",
               "osprep-launch",
@@ -661,35 +677,6 @@
                 "group": "root",
                 "mode": "000700",
                 "owner": "root"
-              },
-              "/etc/cfn/files/adminkeys.pub": {
-                "group": "root",
-                "mode": "000600",
-                "owner": "root",
-                "source": { "Ref": "AdminPubkeyURL" }
-              },
-              "/etc/cfn/scripts/admkey.sh": {
-                "content": {
-                  "Fn::Join": [
-                    "",
-                    [
-                      "#!/bin/bash\n\n",
-                      "PROVHOME=$(getent passwd ",
-                      { "Ref": "ProvisionUser" },
-                      " | awk -F\":\" '{print $6}')\n",
-                      "\n",
-                      "install -b -m 000600 -o ",
-                      { "Ref": "ProvisionUser" },
-                      " -g ",
-                      { "Ref": "ProvisionUser" },
-                      " /etc/cfn/files/adminkeys.pub ${PROVHOME}/.ssh/authorized_keys\n",
-                      "\n"
-                    ]
-                  ]
-                },
-                "group": "root",
-                "mode": "000700",
-                "owner": "root"
               }
             },
             "services": {
@@ -844,7 +831,13 @@
         },
         "ImageId": { "Ref": "AmiId" },
         "InstanceType": { "Ref": "InstanceType" },
-        "KeyName": { "Ref": "KeyPairName" },
+        "KeyName": {
+          "Fn::If": [
+            "UseKeyPair",
+            { "Ref": "KeyPairName" },
+            { "Ref": "AWS::NoValue" }
+          ]
+        },
         "NetworkInterfaces": [
           {
             "AssociatePublicIpAddress": {
