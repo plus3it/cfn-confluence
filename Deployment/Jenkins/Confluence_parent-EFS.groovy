@@ -25,8 +25,8 @@ pipeline {
         string(name: 'AwsRegion', defaultValue: 'us-east-1', description: 'Amazon region to deploy resources into')
         string(name: 'AwsCred', description: 'Jenkins-stored AWS credential with which to execute cloud-layer commands')
         string(name: 'GitCred', description: 'Jenkins-stored Git credential with which to execute git commands')
-        string(name: 'GitProjUrl', description: 'SSH URL from which to download the Jenkins git project')
-        string(name: 'GitProjBranch', description: 'Project-branch to use from the Jenkins git project')
+        string(name: 'GitProjUrl', description: 'SSH URL from which to download the Confluence git project')
+        string(name: 'GitProjBranch', description: 'Project-branch to use from the Confluence git project')
         string(name: 'CfnStackRoot', description: 'Unique token to prepend to all stack-element names')
         string(name: 'AdminPubkeyURL', description: 'URL to the administrator pub keys')
         string(name: 'AmiId', description: 'ID of the AMI to launch')
@@ -59,12 +59,10 @@ pipeline {
         string(name: 'IamTemplateUri', description: 'URI for the template that creates Confluences Instance roles.')
         string(name: 'InstanceType', defaultValue: 't2.small', description: 'Amazon EC2 instance type')
         string(name: 'KeyPairName', description: 'Public/private key pairs allow you to securely connect to your instance after it launches')
-        string(name: 'NoPublicIp', defaultValue: 'true', description: 'Controls whether to assign the instance a public IP. Recommended to leave at \"true\" _unless_ launching in a public subnet')
         string(name: 'NoReboot', defaultValue: 'false', description: 'Controls whether to reboot the instance as the last step of cfn-init execution')
         string(name: 'NoUpdates', defaultValue: 'false', description: 'Controls whether to run yum update during a stack update (on the initial instance launch, SystemPrep _always_ installs updates)')
         string(name: 'PgsqlVersion', description: 'The X.Y.Z version of the PostGreSQL database to deploy.')
         string(name: 'PipRpm', description: 'Name of preferred pip RPM')
-        string(name: 'PrivateIp', defaultValue: '', description: '(Optional) Set a static, primary private IP. Leave blank to auto-select a free IP')
         string(name: 'ProvisionUser', defaultValue: 'jenkagent', description: 'Default login user account name')
         string(name: 'ProxyPrettyName', description: 'A short, human-friendly label to assign to the ELB (no capital letters')
         string(name: 'PubElbSubnets', description: 'Select three subnets - each from different, user-facing Availability Zones.')
@@ -223,20 +221,12 @@ pipeline {
                         "ParameterValue": "${env.NoReboot}"
                       },
                       {
-                        "ParameterKey": "NoUpdates",
-                        "ParameterValue": "${env.NoUpdates}"
-                      },
-                      {
                         "ParameterKey": "PgsqlVersion",
                         "ParameterValue": "${env.PgsqlVersion}"
                       },
                       {
                         "ParameterKey": "PipRpm",
                         "ParameterValue": "${env.PipRpm}"
-                      },
-                      {
-                        "ParameterKey": "PrivateIp",
-                        "ParameterValue": "${env.PrivateIp}"
                       },
                       {
                         "ParameterKey": "ProvisionUser",
@@ -327,7 +317,7 @@ pipeline {
                 }
             }
         }
-        stage ('Launch Jenkins Master Stack') {
+        stage ('Launch Confluence Master Stack') {
             options {
                 timeout(time: 1, unit: 'HOURS')
             }
@@ -342,7 +332,7 @@ pipeline {
                         echo "Attempting to create stack ${CfnStackRoot}..."
                         aws --region "${AwsRegion}" cloudformation create-stack --stack-name "${CfnStackRoot}" \
                           --disable-rollback --capabilities CAPABILITY_NAMED_IAM \
-                          --template-url "${PrimaryTemplate}" \
+                          --template-body file://Templates/make_confluence_parent-EFS.tmplt.json \
                           --parameters file://ConfluenceDeploy.parms.json
 
                         sleep 15
@@ -379,4 +369,3 @@ pipeline {
         }
     }
 }
-
