@@ -59,6 +59,7 @@ pipeline {
         string(name: 'IamTemplateUri', description: 'URI for the template that creates Confluences Instance roles.')
         string(name: 'InstanceType', defaultValue: 't2.small', description: 'Amazon EC2 instance type')
         string(name: 'KeyPairName', description: 'Public/private key pairs allow you to securely connect to your instance after it launches')
+        string(name: 'NoPublicIp', defaultValue: 'true', description: 'Controls whether to assign the instance a public IP. Recommended to leave at "true" _unless_ launching in a public subnet')
         string(name: 'NoReboot', defaultValue: 'false', description: 'Controls whether to reboot the instance as the last step of cfn-init execution')
         string(name: 'NoUpdates', defaultValue: 'false', description: 'Controls whether to run yum update during a stack update (on the initial instance launch, SystemPrep _always_ installs updates)')
         string(name: 'PgsqlVersion', description: 'The X.Y.Z version of the PostGreSQL database to deploy.')
