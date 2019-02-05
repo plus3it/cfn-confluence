@@ -25,8 +25,8 @@ pipeline {
         string(name: 'AwsRegion', defaultValue: 'us-east-1', description: 'Amazon region to deploy resources into')
         string(name: 'AwsCred', description: 'Jenkins-stored AWS credential with which to execute cloud-layer commands')
         string(name: 'GitCred', description: 'Jenkins-stored Git credential with which to execute git commands')
-        string(name: 'GitProjUrl', description: 'SSH URL from which to download the Jenkins git project')
-        string(name: 'GitProjBranch', description: 'Project-branch to use from the Jenkins git project')
+        string(name: 'GitProjUrl', description: 'SSH URL from which to download the Confluence git project')
+        string(name: 'GitProjBranch', description: 'Project-branch to use from the Confluence git project')
         string(name: 'CfnStackRoot', description: 'Unique token to prepend to all stack-element names')
         string(name: 'AdminPubkeyURL', description: 'URL to the administrator pub keys')
         string(name: 'AmiId', description: 'ID of the AMI to launch')
@@ -317,7 +317,7 @@ pipeline {
                 }
             }
         }
-        stage ('Launch Jenkins Master Stack') {
+        stage ('Launch Confluence Master Stack') {
             options {
                 timeout(time: 1, unit: 'HOURS')
             }
